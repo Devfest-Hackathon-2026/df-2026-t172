@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  技術検証の録音用（recording-guide.md）。アプリと同じ MediaRecorder（webm/opus）で録り、
+  ファイルとして保存するだけ。どこにも送らない。保存先はリポジトリの外にする（P-01）。
+-->
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>検証の録音</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; max-width: 560px; }
+    button { font-size: 20px; padding: 12px 20px; margin: 4px; }
+    #time { font-size: 40px; font-variant-numeric: tabular-nums; margin: 16px 0; }
+    #warn { color: #b00; }
+  </style>
+</head>
+<body>
+  <h1>検証の録音</h1>
+  <label>録音の名前 <select id="name">
+    <option>r1_s3</option><option>r2_s2</option><option>r3_s1s5</option>
+    <option>r4_s4p</option><option>r5_s3_noise</option>
+  </select></label>
+  <div id="time">0.0 秒</div>
+  <div id="warn"></div>
+  <button id="start">録音を始める</button>
+  <button id="stop" disabled>止めて保存</button>
+  <p id="info"></p>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let recorder, chunks, startedAt, timer;
+    $("start").onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const type = "audio/webm;codecs=opus";
+      recorder = new MediaRecorder(stream, MediaRecorder.isTypeSupported(type) ? { mimeType: type } : {});
+      chunks = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunks, { type: recorder.mimeType });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${$("name").value}.webm`;
+        a.click();
+        $("info").textContent = `${recorder.mimeType}・${(blob.size / 1024).toFixed(0)}KB を保存した`;
+      };
+      recorder.start();
+      startedAt = performance.now();
+      timer = setInterval(() => {
+        const s = (performance.now() - startedAt) / 1000;
+        $("time").textContent = `${s.toFixed(1)} 秒`;
+        $("warn").textContent = s > 180 ? "3分（アプリの上限）を超えた" : "";
+      }, 100);
+      $("start").disabled = true;
+      $("stop").disabled = false;
+    };
+    $("stop").onclick = () => {
+      clearInterval(timer);
+      recorder.stop();
+      $("start").disabled = false;
+      $("stop").disabled = true;
+    };
+  </script>
+</body>
+</html>

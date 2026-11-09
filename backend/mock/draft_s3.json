@@ -1,0 +1,141 @@
+{
+  "mode": "mock",
+  "patient": {
+    "id": "p308",
+    "room": "308",
+    "bed": "A",
+    "name": "鈴原",
+    "kana": "すずはら",
+    "full_name": "鈴原 キヨ",
+    "full_kana": "すずはら きよ",
+    "ward": "東3病棟",
+    "assigned_to": "n02",
+    "assigned_reported_by": null
+  },
+  "patient_match": {
+    "room": "一致",
+    "name": "一致",
+    "others": [],
+    "level": "ok",
+    "reasons": []
+  },
+  "input": "audio",
+  "utterances": [
+    {
+      "id": "u1",
+      "speaker": "nurse",
+      "start": 0.0,
+      "end": 5.1,
+      "text": "鈴原さん、こんにちは。308号室の鈴原さん、お熱測らせてくださいね"
+    },
+    {
+      "id": "u2",
+      "speaker": "patient",
+      "start": 5.7,
+      "end": 6.8,
+      "text": "はい"
+    },
+    {
+      "id": "u3",
+      "speaker": "nurse",
+      "start": 7.4,
+      "end": 10.2,
+      "text": "今日は窓から山がよく見えますね"
+    },
+    {
+      "id": "u4",
+      "speaker": "patient",
+      "start": 10.8,
+      "end": 11.9,
+      "text": "うん"
+    },
+    {
+      "id": "u5",
+      "speaker": "nurse",
+      "start": 12.5,
+      "end": 15.3,
+      "text": "37.4度。ちょっと高めですね"
+    },
+    {
+      "id": "u6",
+      "speaker": "patient",
+      "start": 15.9,
+      "end": 18.0,
+      "text": "なんだか、だるくてね"
+    },
+    {
+      "id": "u7",
+      "speaker": "nurse",
+      "start": 18.6,
+      "end": 21.4,
+      "text": "そうですか。お水は飲めてますか"
+    },
+    {
+      "id": "u8",
+      "speaker": "patient",
+      "start": 22.0,
+      "end": 23.6,
+      "text": "まあ、少しは"
+    }
+  ],
+  "draft": {
+    "vitals": [
+      {
+        "item": "体温",
+        "value": "37.4",
+        "evidence": [
+          "u5"
+        ],
+        "source": "conversation"
+      }
+    ],
+    "soap": {
+      "S": [
+        {
+          "text": "倦怠感の訴え。",
+          "evidence": [
+            "u6"
+          ],
+          "added_by": "ai"
+        },
+        {
+          "text": "飲水は少しはできているとの発言。",
+          "evidence": [
+            "u8"
+          ],
+          "added_by": "ai"
+        },
+        {
+          "text": "脱水傾向あり。",
+          "evidence": [
+            "u6",
+            "u8"
+          ],
+          "added_by": "ai"
+        }
+      ],
+      "O": [],
+      "A": "",
+      "P": ""
+    },
+    "requests": [],
+    "manual_needed": [],
+    "doctor_questions": []
+  },
+  "checks": [
+    {
+      "path": "soap.S[2]",
+      "level": "stop",
+      "code": "entail_not_supported",
+      "message": "二段目：根拠の発言だけからは言えない（u6 はだるさ、u8 は飲水が少しできるという発言で、脱水とは言っていない）"
+    }
+  ],
+  "missing": [
+    "血圧",
+    "脈拍",
+    "呼吸数",
+    "SpO2"
+  ],
+  "entail_seals": [],
+  "draft_token": ""
+}

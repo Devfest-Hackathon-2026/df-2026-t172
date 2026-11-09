@@ -1,0 +1,68 @@
+[
+  {
+    "id": "p302",
+    "room": "302",
+    "bed": "A",
+    "name": "田中",
+    "kana": "たなか",
+    "full_name": "田中 一郎",
+    "full_kana": "たなか いちろう",
+    "ward": "東3病棟",
+    "assigned_to": "n01"
+  },
+  {
+    "id": "p303",
+    "room": "303",
+    "bed": "A",
+    "name": "中田",
+    "kana": "なかた",
+    "full_name": "中田 花子",
+    "full_kana": "なかた はなこ",
+    "ward": "東3病棟",
+    "assigned_to": "n01"
+  },
+  {
+    "id": "p305",
+    "room": "305",
+    "bed": "A",
+    "name": "佐藤",
+    "kana": "さとう",
+    "full_name": "佐藤 和夫",
+    "full_kana": "さとう かずお",
+    "ward": "東3病棟",
+    "assigned_to": "n02"
+  },
+  {
+    "id": "p308",
+    "room": "308",
+    "bed": "A",
+    "name": "鈴原",
+    "kana": "すずはら",
+    "full_name": "鈴原 キヨ",
+    "full_kana": "すずはら きよ",
+    "ward": "東3病棟",
+    "assigned_to": "n02"
+  },
+  {
+    "id": "p310",
+    "room": "310",
+    "bed": "A",
+    "name": "小川",
+    "kana": "おがわ",
+    "full_name": "小川 健一",
+    "full_kana": "おがわ けんいち",
+    "ward": "東3病棟",
+    "assigned_to": "n03"
+  },
+  {
+    "id": "p312",
+    "room": "312",
+    "bed": "A",
+    "name": "小林",
+    "kana": "こばやし",
+    "full_name": "小林 正雄",
+    "full_kana": "こばやし まさお",
+    "ward": "東3病棟",
+    "assigned_to": "n03"
+  }
+]

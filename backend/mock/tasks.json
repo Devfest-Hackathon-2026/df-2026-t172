@@ -1,0 +1,75 @@
+{
+  "note": "タスク画面の見本（MODE=mock で最初から入っている）。3段がそろうように作った架空の依頼。hour は今日の何時に作られたことにするか。",
+  "tasks": [
+    {
+      "id": "t_demo1",
+      "patient_id": "p303",
+      "room": "303",
+      "name": "中田",
+      "full_name": "中田 花子",
+      "text": "トイレに行きたいので付き添ってほしい", "category": "排泄", "role": "看護師", "category_set_by": "ai", "role_set_by": "ai",
+      "patient_words": [
+        "ちょっとトイレ行きたいんだけど、早めにお願いできる？"
+      ],
+      "urgency": "said_urgent",
+      "urgency_set_by": "rule",
+      "cue": {
+        "kind": "患者が急ぎと言った",
+        "text": "早めに"
+      },
+      "status": "open",
+      "hour": 9
+    },
+    {
+      "id": "t_demo2",
+      "patient_id": "p305",
+      "room": "305",
+      "name": "佐藤",
+      "full_name": "佐藤 和夫",
+      "text": "昼食が来たらすぐ食べたい", "category": "食事", "role": "看護助手", "category_set_by": "ai", "role_set_by": "ai",
+      "patient_words": [
+        "お昼ご飯来たら、すぐ食べたいんだよね。お腹すいちゃって"
+      ],
+      "urgency": "timed",
+      "urgency_set_by": "rule",
+      "cue": {
+        "kind": "時間指定",
+        "text": "昼食前"
+      },
+      "status": "open",
+      "hour": 11
+    },
+    {
+      "id": "t_demo3",
+      "patient_id": "p305",
+      "room": "305",
+      "name": "佐藤",
+      "full_name": "佐藤 和夫",
+      "text": "汗をかいたので着替えたい", "category": "着替え", "role": "看護助手", "category_set_by": "ai", "role_set_by": "ai",
+      "patient_words": [
+        "なんか汗かいちゃって、着替えたいな"
+      ],
+      "urgency": "none",
+      "urgency_set_by": "rule",
+      "cue": null,
+      "status": "open",
+      "hour": 11
+    },
+    {
+      "id": "t_demo4",
+      "patient_id": "p302",
+      "room": "302",
+      "name": "田中",
+      "full_name": "田中 一郎",
+      "text": "タオルをもう1枚", "category": "物品", "role": "看護助手", "category_set_by": "ai", "role_set_by": "ai",
+      "patient_words": [
+        "タオル、もう1枚もらえるかな"
+      ],
+      "urgency": "none",
+      "urgency_set_by": "rule",
+      "cue": null,
+      "status": "open",
+      "hour": 9
+    }
+  ]
+}

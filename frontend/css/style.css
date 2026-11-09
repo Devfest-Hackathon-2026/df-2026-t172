@@ -1,0 +1,158 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  --color-text: #263244;
+  --color-muted: #626D7C;
+  --color-primary: #102D69;
+  --color-primary-hover: #0A2050;
+  --color-primary-soft: #EDF1F7;
+  --color-background: #F7F8FA;
+  --color-canvas: #E9ECF0;
+  --color-surface-subtle: #F1F3F6;
+  --color-border: #D9DEE6;
+  --color-divider: #E8EBF0;
+  --color-surface: #ffffff;
+  --color-focus: #102D69;
+  /* 照合・注意・停止の色はテーマから独立させます。 */
+  --color-success: #256346;
+  --color-success-soft: #EDF6F0;
+  --color-success-border: #B9D6C3;
+  --color-danger: #A84238;
+  --color-danger-soft: #FFF1EB;
+  --color-danger-border: #E7BEB2;
+  --color-warning: #88621E;
+  --color-warning-soft: #FFF8E6;
+  --color-warning-border: #D6BA77;
+  --color-urgency-urgent: #C81E1E;
+  --color-urgency-timed: #FFD600;
+  --color-urgency-none: #9CA3AF;
+  --nav-height: calc(72px + env(safe-area-inset-bottom, 0px));
+  color: var(--color-text);
+  background: var(--color-canvas);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea, select { font: inherit; }
+button, a { touch-action: manipulation; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+button, a, input, textarea, select { outline-offset: 4px; }
+:focus-visible { outline: 3px solid var(--color-focus); }
+[hidden] { display: none !important; }
+
+.app-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100% - 32px, 410px);
+  height: calc(100vh - 32px);
+  height: min(820px, calc(100dvh - 32px));
+  margin: 16px auto;
+  overflow: hidden;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: 0 16px 42px #182A4614;
+}
+
+.app-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: calc(64px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 22px 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  color: var(--color-primary);
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.3px;
+  text-decoration: none;
+}
+
+.brand-symbol {
+  position: relative;
+  flex-shrink: 0;
+  display: block;
+  width: 40px;
+  height: 34px;
+  overflow: hidden;
+}
+
+/* 元画像を変形せず、外側の余白と影を表示範囲の外へ出します。 */
+.brand-symbol img {
+  position: absolute;
+  top: -40%;
+  left: -24%;
+  display: block;
+  width: 150%;
+  height: auto;
+  max-width: none;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+  padding: 17px max(20px, env(safe-area-inset-right, 0px)) 26px max(20px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+
+.app-content:focus { outline: none; }
+.page-title { margin: 4px 0 24px; font-size: 21px; font-weight: 750; }
+.section-title { margin: 0; font-size: 15px; font-weight: 750; }
+
+.mic-area {
+  display: grid;
+  min-height: 265px;
+  min-height: clamp(220px, 35dvh, 285px);
+  place-items: center;
+}
+
+.task-section { margin-top: 8px; }
+
+.screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  :root { background: var(--color-background); }
+  .app-shell {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

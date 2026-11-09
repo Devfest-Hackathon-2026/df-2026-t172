@@ -1,0 +1,193 @@
+{
+  "mode": "mock",
+  "patient": {
+    "id": "p305",
+    "room": "305",
+    "bed": "A",
+    "name": "佐藤",
+    "kana": "さとう",
+    "full_name": "佐藤 和夫",
+    "full_kana": "さとう かずお",
+    "ward": "東3病棟",
+    "assigned_to": "n02",
+    "assigned_reported_by": null
+  },
+  "patient_match": {
+    "room": "一致",
+    "name": "一致",
+    "others": [],
+    "level": "ok",
+    "reasons": []
+  },
+  "input": "audio",
+  "utterances": [
+    {
+      "id": "u1",
+      "speaker": "nurse",
+      "start": 0.0,
+      "end": 5.6,
+      "text": "佐藤さん、おかえりなさい。305号室の佐藤さんですね、リハビリどうでした？"
+    },
+    {
+      "id": "u2",
+      "speaker": "patient",
+      "start": 6.2,
+      "end": 9.9,
+      "text": "いやー、きつかったよ。階段の練習させられてさ"
+    },
+    {
+      "id": "u3",
+      "speaker": "nurse",
+      "start": 10.5,
+      "end": 13.0,
+      "text": "階段！すごいじゃないですか"
+    },
+    {
+      "id": "u4",
+      "speaker": "patient",
+      "start": 13.6,
+      "end": 19.7,
+      "text": "理学療法士の先生がまた厳しくてね、でも面白い人なんだよ。昔ラグビーやってたんだって"
+    },
+    {
+      "id": "u5",
+      "speaker": "nurse",
+      "start": 20.3,
+      "end": 22.8,
+      "text": "たしかに体格いいですもんね"
+    },
+    {
+      "id": "u6",
+      "speaker": "patient",
+      "start": 23.4,
+      "end": 26.9,
+      "text": "もうお腹ぺこぺこ。お昼来たらすぐ食べたいな"
+    },
+    {
+      "id": "u7",
+      "speaker": "nurse",
+      "start": 27.5,
+      "end": 34.3,
+      "text": "お昼の前にインスリンがあるので、食べる前に声かけてくださいね。先に食べちゃわないでくださいよ"
+    },
+    {
+      "id": "u8",
+      "speaker": "patient",
+      "start": 34.9,
+      "end": 38.9,
+      "text": "わかってるって。あ、汗かいたから着替えたいんだけど"
+    },
+    {
+      "id": "u9",
+      "speaker": "nurse",
+      "start": 39.5,
+      "end": 43.5,
+      "text": "じゃあ血糖測ってから着替えましょうか。182ですね"
+    },
+    {
+      "id": "u10",
+      "speaker": "patient",
+      "start": 44.1,
+      "end": 45.3,
+      "text": "高い？"
+    },
+    {
+      "id": "u11",
+      "speaker": "nurse",
+      "start": 45.9,
+      "end": 47.6,
+      "text": "少し高めですね"
+    },
+    {
+      "id": "u12",
+      "speaker": "patient",
+      "start": 48.2,
+      "end": 52.0,
+      "text": "午後に娘が来るんだけど、面会って何時からだっけ"
+    },
+    {
+      "id": "u13",
+      "speaker": "nurse",
+      "start": 52.6,
+      "end": 54.4,
+      "text": "13時からですよ"
+    }
+  ],
+  "draft": {
+    "vitals": [
+      {
+        "item": "血糖",
+        "value": "182",
+        "evidence": [
+          "u9"
+        ],
+        "source": "conversation"
+      }
+    ],
+    "soap": {
+      "S": [
+        {
+          "text": "リハビリで階段の練習をし、きつかったとの訴え。空腹の訴えあり。",
+          "evidence": [
+            "u2",
+            "u6"
+          ],
+          "added_by": "ai"
+        }
+      ],
+      "O": [],
+      "A": "",
+      "P": ""
+    },
+    "requests": [
+      {
+        "text": "汗をかいたので着替えたい",
+        "urgency": "none",
+        "cue": null,
+        "evidence": [
+          "u8"
+        ],
+        "added_by": "ai",
+        "category": "着替え",
+        "role": "看護助手"
+      },
+      {
+        "text": "昼食が来たらすぐ食べたい",
+        "urgency": "timed",
+        "cue": {
+          "kind": "時間指定",
+          "text": "昼食前",
+          "evidence": [
+            "u6"
+          ]
+        },
+        "evidence": [
+          "u6"
+        ],
+        "added_by": "ai",
+        "category": "食事",
+        "role": "看護助手"
+      }
+    ],
+    "manual_needed": [
+      {
+        "text": "薬の話あり",
+        "evidence": [
+          "u7"
+        ],
+        "added_by": "ai"
+      }
+    ],
+    "doctor_questions": []
+  },
+  "checks": [],
+  "missing": [
+    "体温",
+    "血圧",
+    "脈拍",
+    "呼吸数",
+    "SpO2"
+  ],
+  "entail_seals": [],
+  "draft_token": ""
+}

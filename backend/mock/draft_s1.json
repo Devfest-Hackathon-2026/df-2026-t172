@@ -1,0 +1,233 @@
+{
+  "mode": "mock",
+  "patient": {
+    "id": "p302",
+    "room": "302",
+    "bed": "A",
+    "name": "田中",
+    "kana": "たなか",
+    "full_name": "田中 一郎",
+    "full_kana": "たなか いちろう",
+    "ward": "東3病棟",
+    "assigned_to": "n01",
+    "assigned_reported_by": null
+  },
+  "patient_match": {
+    "room": "一致",
+    "name": "一致",
+    "others": [],
+    "level": "ok",
+    "reasons": []
+  },
+  "input": "audio",
+  "utterances": [
+    {
+      "id": "u1",
+      "speaker": "nurse",
+      "start": 0.0,
+      "end": 5.6,
+      "text": "田中さーん、おはようございます。302号室の田中さん、朝の検温に来ましたよ"
+    },
+    {
+      "id": "u2",
+      "speaker": "patient",
+      "start": 6.2,
+      "end": 9.2,
+      "text": "ああ、おはよう。今日は天気いいねえ"
+    },
+    {
+      "id": "u3",
+      "speaker": "nurse",
+      "start": 9.8,
+      "end": 15.0,
+      "text": "ほんとですね、昨日の雨が嘘みたい。お熱測りますね、脇に挟んでください"
+    },
+    {
+      "id": "u4",
+      "speaker": "patient",
+      "start": 15.6,
+      "end": 20.4,
+      "text": "はいはい。昨日さ、孫が見舞いに来てくれてね、もう小学生なんだよ"
+    },
+    {
+      "id": "u5",
+      "speaker": "nurse",
+      "start": 21.0,
+      "end": 24.0,
+      "text": "えー、いいですね！何年生なんですか"
+    },
+    {
+      "id": "u6",
+      "speaker": "patient",
+      "start": 24.6,
+      "end": 28.4,
+      "text": "3年生。サッカーやっててさ、今度試合なんだって"
+    },
+    {
+      "id": "u7",
+      "speaker": "nurse",
+      "start": 29.0,
+      "end": 34.7,
+      "text": "応援に行けるように早く良くならないとですね。あ、鳴りました。36.8度ですね"
+    },
+    {
+      "id": "u8",
+      "speaker": "nurse",
+      "start": 35.3,
+      "end": 39.1,
+      "text": "血圧も測りますねー。132の78、脈は76です"
+    },
+    {
+      "id": "u9",
+      "speaker": "patient",
+      "start": 39.7,
+      "end": 44.5,
+      "text": "傷がさ、夜中ちょっとズキズキして、あんまり眠れなかったんだよね"
+    },
+    {
+      "id": "u10",
+      "speaker": "nurse",
+      "start": 45.1,
+      "end": 49.3,
+      "text": "そうでしたか。痛みは10段階でいうとどれくらいですか"
+    },
+    {
+      "id": "u11",
+      "speaker": "patient",
+      "start": 49.9,
+      "end": 53.6,
+      "text": "今は、4くらいかなあ。夜はもうちょっとあった"
+    },
+    {
+      "id": "u12",
+      "speaker": "nurse",
+      "start": 54.2,
+      "end": 59.2,
+      "text": "ちょっと傷見せてくださいね。赤くなったり腫れたりはしてないですね"
+    },
+    {
+      "id": "u13",
+      "speaker": "patient",
+      "start": 59.8,
+      "end": 65.5,
+      "text": "そういえばさ、ご飯っていつから食べられるの？病院のご飯でもいいから食べたいよ"
+    },
+    {
+      "id": "u14",
+      "speaker": "nurse",
+      "start": 66.1,
+      "end": 69.4,
+      "text": "ですよね。先生に確認してお伝えしますね"
+    },
+    {
+      "id": "u15",
+      "speaker": "patient",
+      "start": 70.0,
+      "end": 73.5,
+      "text": "あとタオルもう1枚もらえる？汗かいちゃって"
+    },
+    {
+      "id": "u16",
+      "speaker": "nurse",
+      "start": 74.1,
+      "end": 77.1,
+      "text": "わかりました、あとで持ってきますね"
+    },
+    {
+      "id": "u17",
+      "speaker": "patient",
+      "start": 77.7,
+      "end": 80.7,
+      "text": "テレビカードってどこで買うんだっけ"
+    },
+    {
+      "id": "u18",
+      "speaker": "nurse",
+      "start": 81.3,
+      "end": 84.1,
+      "text": "談話室の前に販売機がありますよ"
+    }
+  ],
+  "draft": {
+    "vitals": [
+      {
+        "item": "体温",
+        "value": "36.8",
+        "evidence": [
+          "u7"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "血圧",
+        "value": "132/78",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "脈拍",
+        "value": "76",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      }
+    ],
+    "soap": {
+      "S": [
+        {
+          "text": "夜間に創部痛あり、あまり眠れなかったとの訴え。現在の痛みは4/10、夜間はそれ以上。",
+          "evidence": [
+            "u9",
+            "u11"
+          ],
+          "added_by": "ai"
+        }
+      ],
+      "O": [
+        {
+          "text": "創部に発赤・腫脹なし。",
+          "evidence": [
+            "u12"
+          ],
+          "added_by": "ai"
+        }
+      ],
+      "A": "",
+      "P": ""
+    },
+    "requests": [
+      {
+        "text": "タオルをもう1枚",
+        "urgency": "none",
+        "cue": null,
+        "evidence": [
+          "u15"
+        ],
+        "added_by": "ai",
+        "category": "物品",
+        "role": "看護助手"
+      }
+    ],
+    "manual_needed": [],
+    "doctor_questions": [
+      {
+        "text": "食事の開始時期",
+        "evidence": [
+          "u13",
+          "u14"
+        ],
+        "added_by": "ai"
+      }
+    ]
+  },
+  "checks": [],
+  "missing": [
+    "呼吸数",
+    "SpO2"
+  ],
+  "entail_seals": [],
+  "draft_token": ""
+}

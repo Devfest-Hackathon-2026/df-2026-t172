@@ -32,3 +32,31 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# 開発用リポジトリから
+# 秘密情報
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*-key.json
+service-account*.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+spike/out/
+
+# Node
+node_modules/
+
+# エディタ・ツール
+.claude/
+.vscode/
+.idea/
+.DS_Store

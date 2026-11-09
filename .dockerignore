@@ -1,0 +1,16 @@
+.git
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.env
+**/.env.*
+**/.dev.vars
+**/*.pem
+**/*.key
+**/*-key.json
+**/service-account*.json
+docs
+spike
+backend/tests
+backend/scripts

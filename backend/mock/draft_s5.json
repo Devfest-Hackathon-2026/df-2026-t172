@@ -1,0 +1,176 @@
+{
+  "mode": "mock",
+  "patient": {
+    "id": "p312",
+    "room": "312",
+    "bed": "A",
+    "name": "小林",
+    "kana": "こばやし",
+    "full_name": "小林 正雄",
+    "full_kana": "こばやし まさお",
+    "ward": "東3病棟",
+    "assigned_to": "n03",
+    "assigned_reported_by": null
+  },
+  "patient_match": {
+    "room": "一致",
+    "name": "一致",
+    "others": [],
+    "level": "ok",
+    "reasons": []
+  },
+  "input": "audio",
+  "utterances": [
+    {
+      "id": "u1",
+      "speaker": "nurse",
+      "start": 0.0,
+      "end": 4.7,
+      "text": "小林さん、こんにちは。312号室の小林さん、お昼の検温ですね"
+    },
+    {
+      "id": "u2",
+      "speaker": "patient",
+      "start": 5.3,
+      "end": 9.2,
+      "text": "ああ、どうも。さっきまで将棋のテレビ見てたんだよ"
+    },
+    {
+      "id": "u3",
+      "speaker": "nurse",
+      "start": 9.8,
+      "end": 11.9,
+      "text": "将棋お好きなんですね"
+    },
+    {
+      "id": "u4",
+      "speaker": "patient",
+      "start": 12.5,
+      "end": 19.5,
+      "text": "若い頃は毎日指してたよ。そういえば今朝トイレに行くとき、ちょっとふらっとして壁に手ついちゃってね"
+    },
+    {
+      "id": "u5",
+      "speaker": "nurse",
+      "start": 20.1,
+      "end": 22.6,
+      "text": "えっ、転んではいないですか"
+    },
+    {
+      "id": "u6",
+      "speaker": "patient",
+      "start": 23.2,
+      "end": 25.7,
+      "text": "転んではない。すぐ治ったし"
+    },
+    {
+      "id": "u7",
+      "speaker": "nurse",
+      "start": 26.3,
+      "end": 30.3,
+      "text": "お熱は36.8、あ、ごめんなさい、36.6度でした"
+    },
+    {
+      "id": "u8",
+      "speaker": "nurse",
+      "start": 30.9,
+      "end": 35.9,
+      "text": "血圧は118の70、脈は82、酸素は97です。呼吸は16回ですね"
+    },
+    {
+      "id": "u9",
+      "speaker": "patient",
+      "start": 36.5,
+      "end": 39.9,
+      "text": "孫がね、今度将棋教えてくれって言うんだよ"
+    },
+    {
+      "id": "u10",
+      "speaker": "nurse",
+      "start": 40.5,
+      "end": 44.2,
+      "text": "いいですね。夕方の薬、いつもの2錠ですからね"
+    }
+  ],
+  "draft": {
+    "vitals": [
+      {
+        "item": "体温",
+        "value": "36.6",
+        "evidence": [
+          "u7"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "血圧",
+        "value": "118/70",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "脈拍",
+        "value": "82",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "SpO2",
+        "value": "97",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      },
+      {
+        "item": "呼吸数",
+        "value": "16",
+        "evidence": [
+          "u8"
+        ],
+        "source": "conversation"
+      }
+    ],
+    "soap": {
+      "S": [
+        {
+          "text": "今朝トイレへ行く際にふらつきあり、壁に手をついた。転倒なく、すぐ治まったとの訴え。",
+          "evidence": [
+            "u4",
+            "u6"
+          ],
+          "added_by": "ai"
+        }
+      ],
+      "O": [],
+      "A": "",
+      "P": ""
+    },
+    "requests": [],
+    "manual_needed": [
+      {
+        "text": "夕方の薬の話あり（量の発言あり）",
+        "evidence": [
+          "u10"
+        ],
+        "added_by": "ai"
+      }
+    ],
+    "doctor_questions": []
+  },
+  "checks": [
+    {
+      "path": "vitals[0]",
+      "level": "warn",
+      "code": "multiple_values",
+      "message": "会話に値が複数ある（36.8 → 36.6）。看護師が選ぶ"
+    }
+  ],
+  "missing": [],
+  "entail_seals": [],
+  "draft_token": ""
+}

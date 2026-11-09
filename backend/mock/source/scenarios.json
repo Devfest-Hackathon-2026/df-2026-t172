@@ -1,0 +1,820 @@
+{
+  "note": "モック用の元データ。人物・会話はすべて架空。gemini_draft は Gemini が返す形の見本（Gemini は呼んでいない）。entail_not_supported は二段目の確認の見本（書いていない文は supported 扱い）。expect は受け入れテストの期待値（spike/scenarios.json と同じ）。",
+  "scenarios": [
+    {
+      "id": "s1",
+      "title": "手術翌日の検温",
+      "patient_id": "p302",
+      "utterances": [
+        {
+          "id": "u1",
+          "speaker": "nurse",
+          "start": 0.0,
+          "end": 5.6,
+          "text": "田中さーん、おはようございます。302号室の田中さん、朝の検温に来ましたよ"
+        },
+        {
+          "id": "u2",
+          "speaker": "patient",
+          "start": 6.2,
+          "end": 9.2,
+          "text": "ああ、おはよう。今日は天気いいねえ"
+        },
+        {
+          "id": "u3",
+          "speaker": "nurse",
+          "start": 9.8,
+          "end": 15.0,
+          "text": "ほんとですね、昨日の雨が嘘みたい。お熱測りますね、脇に挟んでください"
+        },
+        {
+          "id": "u4",
+          "speaker": "patient",
+          "start": 15.6,
+          "end": 20.4,
+          "text": "はいはい。昨日さ、孫が見舞いに来てくれてね、もう小学生なんだよ"
+        },
+        {
+          "id": "u5",
+          "speaker": "nurse",
+          "start": 21.0,
+          "end": 24.0,
+          "text": "えー、いいですね！何年生なんですか"
+        },
+        {
+          "id": "u6",
+          "speaker": "patient",
+          "start": 24.6,
+          "end": 28.4,
+          "text": "3年生。サッカーやっててさ、今度試合なんだって"
+        },
+        {
+          "id": "u7",
+          "speaker": "nurse",
+          "start": 29.0,
+          "end": 34.7,
+          "text": "応援に行けるように早く良くならないとですね。あ、鳴りました。36.8度ですね"
+        },
+        {
+          "id": "u8",
+          "speaker": "nurse",
+          "start": 35.3,
+          "end": 39.1,
+          "text": "血圧も測りますねー。132の78、脈は76です"
+        },
+        {
+          "id": "u9",
+          "speaker": "patient",
+          "start": 39.7,
+          "end": 44.5,
+          "text": "傷がさ、夜中ちょっとズキズキして、あんまり眠れなかったんだよね"
+        },
+        {
+          "id": "u10",
+          "speaker": "nurse",
+          "start": 45.1,
+          "end": 49.3,
+          "text": "そうでしたか。痛みは10段階でいうとどれくらいですか"
+        },
+        {
+          "id": "u11",
+          "speaker": "patient",
+          "start": 49.9,
+          "end": 53.6,
+          "text": "今は、4くらいかなあ。夜はもうちょっとあった"
+        },
+        {
+          "id": "u12",
+          "speaker": "nurse",
+          "start": 54.2,
+          "end": 59.2,
+          "text": "ちょっと傷見せてくださいね。赤くなったり腫れたりはしてないですね"
+        },
+        {
+          "id": "u13",
+          "speaker": "patient",
+          "start": 59.8,
+          "end": 65.5,
+          "text": "そういえばさ、ご飯っていつから食べられるの？病院のご飯でもいいから食べたいよ"
+        },
+        {
+          "id": "u14",
+          "speaker": "nurse",
+          "start": 66.1,
+          "end": 69.4,
+          "text": "ですよね。先生に確認してお伝えしますね"
+        },
+        {
+          "id": "u15",
+          "speaker": "patient",
+          "start": 70.0,
+          "end": 73.5,
+          "text": "あとタオルもう1枚もらえる？汗かいちゃって"
+        },
+        {
+          "id": "u16",
+          "speaker": "nurse",
+          "start": 74.1,
+          "end": 77.1,
+          "text": "わかりました、あとで持ってきますね"
+        },
+        {
+          "id": "u17",
+          "speaker": "patient",
+          "start": 77.7,
+          "end": 80.7,
+          "text": "テレビカードってどこで買うんだっけ"
+        },
+        {
+          "id": "u18",
+          "speaker": "nurse",
+          "start": 81.3,
+          "end": 84.1,
+          "text": "談話室の前に販売機がありますよ"
+        }
+      ],
+      "gemini_draft": {
+        "vitals": [
+          {
+            "item": "体温",
+            "value": "36.8",
+            "evidence": [
+              "u7"
+            ]
+          },
+          {
+            "item": "血圧",
+            "value": "132/78",
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "item": "脈拍",
+            "value": "76",
+            "evidence": [
+              "u8"
+            ]
+          }
+        ],
+        "narrative": [
+          {
+            "text": "夜間に創部痛あり、あまり眠れなかったとの訴え。現在の痛みは4/10、夜間はそれ以上。",
+            "source": "patient",
+            "evidence": [
+              "u9",
+              "u11"
+            ]
+          },
+          {
+            "text": "創部に発赤・腫脹なし。",
+            "source": "nurse",
+            "evidence": [
+              "u12"
+            ]
+          }
+        ],
+        "requests": [
+          {
+            "text": "タオルをもう1枚", "category": "物品", "role": "看護助手",
+            "cue": null,
+            "evidence": [
+              "u15"
+            ]
+          }
+        ],
+        "doctor_questions": [
+          {
+            "text": "食事の開始時期",
+            "evidence": [
+              "u13",
+              "u14"
+            ]
+          }
+        ],
+        "manual_needed": []
+      },
+      "entail_not_supported": {},
+      "expect": {
+        "vitals": {
+          "体温": "36.8",
+          "血圧": "132/78",
+          "脈拍": "76"
+        },
+        "missing": [
+          "呼吸数",
+          "SpO2"
+        ],
+        "request_keywords": [
+          "タオル"
+        ],
+        "request_count": 1,
+        "narrative_keywords": [
+          "眠れ"
+        ],
+        "forbidden": [
+          "疑い",
+          "診断",
+          "経過観察とする"
+        ],
+        "chat_keywords": [
+          "孫",
+          "サッカー",
+          "天気",
+          "テレビカード"
+        ],
+        "patient": {
+          "room": "一致",
+          "name": "一致",
+          "others": []
+        }
+      }
+    },
+    {
+      "id": "s2",
+      "title": "リハビリ帰りと食前インスリン",
+      "patient_id": "p305",
+      "utterances": [
+        {
+          "id": "u1",
+          "speaker": "nurse",
+          "start": 0.0,
+          "end": 5.6,
+          "text": "佐藤さん、おかえりなさい。305号室の佐藤さんですね、リハビリどうでした？"
+        },
+        {
+          "id": "u2",
+          "speaker": "patient",
+          "start": 6.2,
+          "end": 9.9,
+          "text": "いやー、きつかったよ。階段の練習させられてさ"
+        },
+        {
+          "id": "u3",
+          "speaker": "nurse",
+          "start": 10.5,
+          "end": 13.0,
+          "text": "階段！すごいじゃないですか"
+        },
+        {
+          "id": "u4",
+          "speaker": "patient",
+          "start": 13.6,
+          "end": 19.7,
+          "text": "理学療法士の先生がまた厳しくてね、でも面白い人なんだよ。昔ラグビーやってたんだって"
+        },
+        {
+          "id": "u5",
+          "speaker": "nurse",
+          "start": 20.3,
+          "end": 22.8,
+          "text": "たしかに体格いいですもんね"
+        },
+        {
+          "id": "u6",
+          "speaker": "patient",
+          "start": 23.4,
+          "end": 26.9,
+          "text": "もうお腹ぺこぺこ。お昼来たらすぐ食べたいな"
+        },
+        {
+          "id": "u7",
+          "speaker": "nurse",
+          "start": 27.5,
+          "end": 34.3,
+          "text": "お昼の前にインスリンがあるので、食べる前に声かけてくださいね。先に食べちゃわないでくださいよ"
+        },
+        {
+          "id": "u8",
+          "speaker": "patient",
+          "start": 34.9,
+          "end": 38.9,
+          "text": "わかってるって。あ、汗かいたから着替えたいんだけど"
+        },
+        {
+          "id": "u9",
+          "speaker": "nurse",
+          "start": 39.5,
+          "end": 43.5,
+          "text": "じゃあ血糖測ってから着替えましょうか。182ですね"
+        },
+        {
+          "id": "u10",
+          "speaker": "patient",
+          "start": 44.1,
+          "end": 45.3,
+          "text": "高い？"
+        },
+        {
+          "id": "u11",
+          "speaker": "nurse",
+          "start": 45.9,
+          "end": 47.6,
+          "text": "少し高めですね"
+        },
+        {
+          "id": "u12",
+          "speaker": "patient",
+          "start": 48.2,
+          "end": 52.0,
+          "text": "午後に娘が来るんだけど、面会って何時からだっけ"
+        },
+        {
+          "id": "u13",
+          "speaker": "nurse",
+          "start": 52.6,
+          "end": 54.4,
+          "text": "13時からですよ"
+        }
+      ],
+      "gemini_draft": {
+        "vitals": [
+          {
+            "item": "血糖",
+            "value": "182",
+            "evidence": [
+              "u9"
+            ]
+          }
+        ],
+        "narrative": [
+          {
+            "text": "リハビリで階段の練習をし、きつかったとの訴え。空腹の訴えあり。",
+            "source": "patient",
+            "evidence": [
+              "u2",
+              "u6"
+            ]
+          }
+        ],
+        "requests": [
+          {
+            "text": "汗をかいたので着替えたい", "category": "着替え", "role": "看護助手",
+            "cue": null,
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "text": "昼食が来たらすぐ食べたい", "category": "食事", "role": "看護助手",
+            "cue": {
+              "kind": "時間指定",
+              "text": "昼食前",
+              "evidence": [
+                "u6"
+              ]
+            },
+            "evidence": [
+              "u6"
+            ]
+          }
+        ],
+        "manual_needed": [
+          {
+            "text": "薬の話あり",
+            "evidence": [
+              "u7"
+            ]
+          }
+        ],
+        "doctor_questions": []
+      },
+      "entail_not_supported": {},
+      "expect": {
+        "vitals": {
+          "血糖": "182"
+        },
+        "missing": [
+          "体温",
+          "血圧",
+          "脈拍",
+          "呼吸数",
+          "SpO2"
+        ],
+        "request_keywords": [
+          "着替え"
+        ],
+        "request_count": 2,
+        "cue_any": [
+          "昼"
+        ],
+        "forbidden": [
+          "投与する",
+          "診断",
+          "疑い",
+          "高血糖",
+          "インスリン"
+        ],
+        "chat_keywords": [
+          "ラグビー",
+          "娘",
+          "面会"
+        ],
+        "patient": {
+          "room": "一致",
+          "name": "一致",
+          "others": []
+        },
+        "manual_keywords": [
+          "薬"
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "title": "AI が補ってしまいやすい会話",
+      "patient_id": "p308",
+      "utterances": [
+        {
+          "id": "u1",
+          "speaker": "nurse",
+          "start": 0.0,
+          "end": 5.1,
+          "text": "鈴原さん、こんにちは。308号室の鈴原さん、お熱測らせてくださいね"
+        },
+        {
+          "id": "u2",
+          "speaker": "patient",
+          "start": 5.7,
+          "end": 6.8,
+          "text": "はい"
+        },
+        {
+          "id": "u3",
+          "speaker": "nurse",
+          "start": 7.4,
+          "end": 10.2,
+          "text": "今日は窓から山がよく見えますね"
+        },
+        {
+          "id": "u4",
+          "speaker": "patient",
+          "start": 10.8,
+          "end": 11.9,
+          "text": "うん"
+        },
+        {
+          "id": "u5",
+          "speaker": "nurse",
+          "start": 12.5,
+          "end": 15.3,
+          "text": "37.4度。ちょっと高めですね"
+        },
+        {
+          "id": "u6",
+          "speaker": "patient",
+          "start": 15.9,
+          "end": 18.0,
+          "text": "なんだか、だるくてね"
+        },
+        {
+          "id": "u7",
+          "speaker": "nurse",
+          "start": 18.6,
+          "end": 21.4,
+          "text": "そうですか。お水は飲めてますか"
+        },
+        {
+          "id": "u8",
+          "speaker": "patient",
+          "start": 22.0,
+          "end": 23.6,
+          "text": "まあ、少しは"
+        }
+      ],
+      "gemini_draft": {
+        "vitals": [
+          {
+            "item": "体温",
+            "value": "37.4",
+            "evidence": [
+              "u5"
+            ]
+          }
+        ],
+        "narrative": [
+          {
+            "text": "倦怠感の訴え。",
+            "source": "patient",
+            "evidence": [
+              "u6"
+            ]
+          },
+          {
+            "text": "飲水は少しはできているとの発言。",
+            "source": "patient",
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "text": "脱水傾向あり。",
+            "source": "patient",
+            "evidence": [
+              "u6",
+              "u8"
+            ]
+          }
+        ],
+        "requests": [],
+        "manual_needed": [],
+        "doctor_questions": []
+      },
+      "entail_not_supported": {
+        "脱水傾向あり。": "u6 はだるさ、u8 は飲水が少しできるという発言で、脱水とは言っていない"
+      },
+      "expect": {
+        "vitals": {
+          "体温": "37.4"
+        },
+        "missing": [
+          "血圧",
+          "脈拍",
+          "呼吸数",
+          "SpO2"
+        ],
+        "request_keywords": [],
+        "request_count": 0,
+        "forbidden": [
+          "感染",
+          "脱水",
+          "疑い",
+          "経過観察とする",
+          "診断"
+        ],
+        "chat_keywords": [
+          "山"
+        ],
+        "patient": {
+          "room": "一致",
+          "name": "一致",
+          "others": []
+        }
+      }
+    },
+    {
+      "id": "s4",
+      "title": "患者の名前を言い忘れる",
+      "patient_id": "p310",
+      "utterances": [
+        {
+          "id": "u1",
+          "speaker": "nurse",
+          "start": 0.0,
+          "end": 2.6,
+          "text": "失礼しまーす、310号室です"
+        },
+        {
+          "id": "u2",
+          "speaker": "patient",
+          "start": 3.2,
+          "end": 7.1,
+          "text": "ああどうも。隣の山本さん、昨日退院したんだってね"
+        },
+        {
+          "id": "u3",
+          "speaker": "nurse",
+          "start": 7.7,
+          "end": 10.5,
+          "text": "そうなんですよ、元気になられて"
+        },
+        {
+          "id": "u4",
+          "speaker": "patient",
+          "start": 11.1,
+          "end": 14.9,
+          "text": "いいなあ、俺も早く帰りたいよ。家の猫が心配でさ"
+        },
+        {
+          "id": "u5",
+          "speaker": "nurse",
+          "start": 15.5,
+          "end": 19.9,
+          "text": "猫ちゃん飼ってるんですね。お熱測りますね。36.5度です"
+        },
+        {
+          "id": "u6",
+          "speaker": "patient",
+          "start": 20.5,
+          "end": 23.4,
+          "text": "猫は息子が見てくれてるんだけどね"
+        }
+      ],
+      "gemini_draft": {
+        "vitals": [
+          {
+            "item": "体温",
+            "value": "36.5",
+            "evidence": [
+              "u5"
+            ]
+          }
+        ],
+        "narrative": [],
+        "requests": [],
+        "manual_needed": [],
+        "doctor_questions": []
+      },
+      "entail_not_supported": {},
+      "expect": {
+        "vitals": {
+          "体温": "36.5"
+        },
+        "missing": [
+          "血圧",
+          "脈拍",
+          "呼吸数",
+          "SpO2"
+        ],
+        "request_keywords": [],
+        "request_count": 0,
+        "forbidden": [
+          "診断",
+          "疑い"
+        ],
+        "chat_keywords": [
+          "猫",
+          "山本",
+          "息子"
+        ],
+        "patient": {
+          "room": "一致",
+          "name": "照合できず",
+          "others": []
+        }
+      }
+    },
+    {
+      "id": "s5",
+      "title": "雑談に症状が埋もれる・言い直し・薬",
+      "patient_id": "p312",
+      "utterances": [
+        {
+          "id": "u1",
+          "speaker": "nurse",
+          "start": 0.0,
+          "end": 4.7,
+          "text": "小林さん、こんにちは。312号室の小林さん、お昼の検温ですね"
+        },
+        {
+          "id": "u2",
+          "speaker": "patient",
+          "start": 5.3,
+          "end": 9.2,
+          "text": "ああ、どうも。さっきまで将棋のテレビ見てたんだよ"
+        },
+        {
+          "id": "u3",
+          "speaker": "nurse",
+          "start": 9.8,
+          "end": 11.9,
+          "text": "将棋お好きなんですね"
+        },
+        {
+          "id": "u4",
+          "speaker": "patient",
+          "start": 12.5,
+          "end": 19.5,
+          "text": "若い頃は毎日指してたよ。そういえば今朝トイレに行くとき、ちょっとふらっとして壁に手ついちゃってね"
+        },
+        {
+          "id": "u5",
+          "speaker": "nurse",
+          "start": 20.1,
+          "end": 22.6,
+          "text": "えっ、転んではいないですか"
+        },
+        {
+          "id": "u6",
+          "speaker": "patient",
+          "start": 23.2,
+          "end": 25.7,
+          "text": "転んではない。すぐ治ったし"
+        },
+        {
+          "id": "u7",
+          "speaker": "nurse",
+          "start": 26.3,
+          "end": 30.3,
+          "text": "お熱は36.8、あ、ごめんなさい、36.6度でした"
+        },
+        {
+          "id": "u8",
+          "speaker": "nurse",
+          "start": 30.9,
+          "end": 35.9,
+          "text": "血圧は118の70、脈は82、酸素は97です。呼吸は16回ですね"
+        },
+        {
+          "id": "u9",
+          "speaker": "patient",
+          "start": 36.5,
+          "end": 39.9,
+          "text": "孫がね、今度将棋教えてくれって言うんだよ"
+        },
+        {
+          "id": "u10",
+          "speaker": "nurse",
+          "start": 40.5,
+          "end": 44.2,
+          "text": "いいですね。夕方の薬、いつもの2錠ですからね"
+        }
+      ],
+      "gemini_draft": {
+        "vitals": [
+          {
+            "item": "体温",
+            "value": "36.6",
+            "evidence": [
+              "u7"
+            ]
+          },
+          {
+            "item": "血圧",
+            "value": "118/70",
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "item": "脈拍",
+            "value": "82",
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "item": "SpO2",
+            "value": "97",
+            "evidence": [
+              "u8"
+            ]
+          },
+          {
+            "item": "呼吸数",
+            "value": "16",
+            "evidence": [
+              "u8"
+            ]
+          }
+        ],
+        "narrative": [
+          {
+            "text": "今朝トイレへ行く際にふらつきあり、壁に手をついた。転倒なく、すぐ治まったとの訴え。",
+            "source": "patient",
+            "evidence": [
+              "u4",
+              "u6"
+            ]
+          }
+        ],
+        "requests": [],
+        "manual_needed": [
+          {
+            "text": "夕方の薬の話あり（量の発言あり）",
+            "evidence": [
+              "u10"
+            ]
+          }
+        ],
+        "doctor_questions": []
+      },
+      "entail_not_supported": {},
+      "expect": {
+        "vitals": {
+          "体温": "36.6",
+          "血圧": "118/70",
+          "脈拍": "82",
+          "SpO2": "97",
+          "呼吸数": "16"
+        },
+        "missing": [],
+        "request_keywords": [],
+        "request_count": 0,
+        "narrative_keywords": [
+          "ふら"
+        ],
+        "manual_keywords": [
+          "薬"
+        ],
+        "forbidden": [
+          "起立性",
+          "低血圧",
+          "疑い",
+          "診断",
+          "2錠"
+        ],
+        "chat_keywords": [
+          "将棋",
+          "孫",
+          "テレビ"
+        ],
+        "patient": {
+          "room": "一致",
+          "name": "一致",
+          "others": []
+        }
+      }
+    }
+  ]
+}

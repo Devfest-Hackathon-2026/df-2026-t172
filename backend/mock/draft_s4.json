@@ -1,0 +1,99 @@
+{
+  "mode": "mock",
+  "patient": {
+    "id": "p310",
+    "room": "310",
+    "bed": "A",
+    "name": "小川",
+    "kana": "おがわ",
+    "full_name": "小川 健一",
+    "full_kana": "おがわ けんいち",
+    "ward": "東3病棟",
+    "assigned_to": "n03",
+    "assigned_reported_by": null
+  },
+  "patient_match": {
+    "room": "一致",
+    "name": "照合できず",
+    "others": [],
+    "level": "confirm",
+    "reasons": [
+      "名前を会話で確かめられない"
+    ]
+  },
+  "input": "audio",
+  "utterances": [
+    {
+      "id": "u1",
+      "speaker": "nurse",
+      "start": 0.0,
+      "end": 2.6,
+      "text": "失礼しまーす、310号室です"
+    },
+    {
+      "id": "u2",
+      "speaker": "patient",
+      "start": 3.2,
+      "end": 7.1,
+      "text": "ああどうも。隣の山本さん、昨日退院したんだってね"
+    },
+    {
+      "id": "u3",
+      "speaker": "nurse",
+      "start": 7.7,
+      "end": 10.5,
+      "text": "そうなんですよ、元気になられて"
+    },
+    {
+      "id": "u4",
+      "speaker": "patient",
+      "start": 11.1,
+      "end": 14.9,
+      "text": "いいなあ、俺も早く帰りたいよ。家の猫が心配でさ"
+    },
+    {
+      "id": "u5",
+      "speaker": "nurse",
+      "start": 15.5,
+      "end": 19.9,
+      "text": "猫ちゃん飼ってるんですね。お熱測りますね。36.5度です"
+    },
+    {
+      "id": "u6",
+      "speaker": "patient",
+      "start": 20.5,
+      "end": 23.4,
+      "text": "猫は息子が見てくれてるんだけどね"
+    }
+  ],
+  "draft": {
+    "vitals": [
+      {
+        "item": "体温",
+        "value": "36.5",
+        "evidence": [
+          "u5"
+        ],
+        "source": "conversation"
+      }
+    ],
+    "soap": {
+      "S": [],
+      "O": [],
+      "A": "",
+      "P": ""
+    },
+    "requests": [],
+    "manual_needed": [],
+    "doctor_questions": []
+  },
+  "checks": [],
+  "missing": [
+    "血圧",
+    "脈拍",
+    "呼吸数",
+    "SpO2"
+  ],
+  "entail_seals": [],
+  "draft_token": ""
+}
