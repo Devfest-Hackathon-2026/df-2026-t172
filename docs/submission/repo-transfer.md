@@ -15,7 +15,7 @@
 | `backend/`（`.venv/`・キャッシュは除く。Git に入っていないので下の手順なら自然に除かれる） | `.env` などの秘密情報（そもそも Git に入れていない） |
 | `frontend/` | `docs/submission/pre-submit-checklist.md`（アカウント名が入っている） |
 | `Dockerfile`・`.dockerignore`・`.gitignore`・`firestore.rules` | `spike/`（技術検証のコード。11/9 決定：移さない） |
-| `docs/adr/`・`docs/design/` | `docs/research/`（ヒアリングの記録。11/9 決定：移さない） |
+| `docs/adr/`・`docs/design/` | （`docs/research/` は 11/9 に移すことに変更。ヒアリングの記録は相手の名前・病院名がないことを読み直して確かめた。既存製品の調査も、他社の製品名を出さない決まり（H-01）は「プロダクトで Google 以外の製品を使わない」の意味なので、資料として載せてよいと判断） |
 | `docs/submission/` のうち審査に役立つもの（`architecture.md`・`judges-guide.md`・`ai-usage-log.md` など） | `docs/submission/judging-map.md`・`docs/schedule.md`（内部の作業メモに近い。11/9 決定：移さない） |
 | 提出用の `README.md`（[submission-readme.md](submission-readme.md) を置き換える。運営のひな形の README は上書きする）。`.gitignore` は運営のものに開発用のものを足す | |
 | `LICENSE` は**提出用リポジトリにある運営の MIT（著作権者「The contributors of this repository」）をそのまま使う**。開発用の `LICENSE` は移さない | |
@@ -70,7 +70,7 @@ cd df-2026-t172
 
 # 3. 書き出したファイルを展開し、移さないものを消す
 tar -xf ../export.tar
-rm -rf spike docs/research docs/schedule.md LICENSE \n       docs/submission/pre-submit-checklist.md docs/submission/judging-map.md
+rm -rf spike docs/schedule.md LICENSE \n       docs/submission/pre-submit-checklist.md docs/submission/judging-map.md
 git checkout LICENSE                            # 運営の LICENSE に戻す
 cp docs/submission/submission-readme.md README.md && rm docs/submission/submission-readme.md
 
