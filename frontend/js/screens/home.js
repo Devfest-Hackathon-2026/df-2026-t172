@@ -48,7 +48,10 @@ export function renderHome(state) {
   const list = document.createElement("div");
   list.id = "home-tasks";
   list.className = "task-groups";
-  tasks.append(heading, scope, list);
+  const note = document.createElement("p");
+  note.className = "ai-note";
+  note.textContent = "区分（急ぎ・時間指定）は、会話の中の言葉から機械的に分けたもので、AI の判断ではありません。押すと変えられます。";
+  tasks.append(heading, note, scope, list);
   renderHomeTasks(tasks, state);
 
   view.append(title, micArea, tasks);

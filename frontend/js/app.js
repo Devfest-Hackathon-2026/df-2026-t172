@@ -5,7 +5,7 @@ import {
   setAuthentication, setConfirmedRecord, setConnection, setDraftPhase, setExportState, setFirstSpeaker, setHistoryState, setRecorder, setReview, setScreen, setTaskState, setTranscript,
 } from "./state.js";
 import { renderNavigation, updateNavigation, updateTaskCount } from "./components/navigation.js?v=20261109-count";
-import { renderHome, renderHomeTasks } from "./screens/home.js?v=20261110-assign";
+import { renderHome, renderHomeTasks } from "./screens/home.js?v=20261110-ainote";
 import { createPatientSheet } from "./components/patient-sheet.js";
 import { changeTaskDetails, completeTask, loadTaskCategories, loadTasks, reopenTask, taskCategory } from "./tasks.js?v=20261110-assign";
 import { createTaskChoiceDialog } from "./components/task-choice-dialog.js?v=20261110-assign";
@@ -18,13 +18,13 @@ import { refreshTextInput, renderTextInput } from "./screens/text-input.js";
 import { AudioRecorder } from "./recorder.js";
 import { refreshRecordingStatus, renderRecording } from "./screens/recording.js";
 import { renderProcessing } from "./screens/processing.js";
-import { refreshReviewStatus, renderReview } from "./screens/review.js?v=20261109-navy";
+import { refreshReviewStatus, renderReview } from "./screens/review.js?v=20261110-ainote";
 import { refreshExportDetails, renderExport } from "./screens/export.js";
 import { loadRecord, loadRecords } from "./history.js";
 import { loadPatients } from "./patients.js";
 import { renderHistory } from "./screens/history.js?v=20261109-color";
 import { renderRecordDetail } from "./screens/record-detail.js";
-import { renderTasks, renderTasksContent } from "./screens/tasks.js?v=20261110-assign";
+import { renderTasks, renderTasksContent } from "./screens/tasks.js?v=20261110-ainote";
 
 const content = document.getElementById("screen");
 const navigation = document.getElementById("bottom-nav");

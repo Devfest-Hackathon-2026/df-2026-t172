@@ -79,6 +79,7 @@ export function renderReview(session) {
   const header = element("div", "review-heading");
   header.append(element("h1", "page-title", "記録確認"), reviewButton("破棄", "discard", "text-button danger-text"));
   view.append(header);
+  view.append(element("p", "ai-note", "この画面の S・O・依頼は AI が作った下書きです。赤い枠の文は、根拠の発言から言えるか確かめて、残す／消すを選んでください。"));
   if (session.audioUrl) {
     const audio = element("audio", "recording-playback");
     audio.controls = true;

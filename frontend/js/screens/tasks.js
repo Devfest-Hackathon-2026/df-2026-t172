@@ -16,7 +16,7 @@ export function renderTasks(state) {
   refresh.setAttribute("aria-label", "タスクを更新");
   refresh.append(createIcon("refresh"));
   heading.append(refresh);
-  view.append(heading);
+  view.append(heading, element("p", "ai-note", "区分（急ぎ・時間指定）は、会話の中の言葉から機械的に分けたもので、AI の判断ではありません。押すと変えられます。"));
   renderTasksContent(view, state);
   return view;
 }

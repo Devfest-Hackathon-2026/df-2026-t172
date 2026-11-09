@@ -499,6 +499,7 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 .task-scope-switch { grid-column: 1 / -1; margin-bottom: 8px; }
 .assignee-table { margin-top: 24px; }
 .assignee-toggle { width: 100%; }
+.ai-note { margin: 4px 0 12px; color: var(--color-muted); font-size: 12px; line-height: 1.6; }
 .assignee-note { margin: 12px 0 8px; color: var(--color-muted); font-size: 12px; line-height: 1.6; }
 .assignee-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 9em); gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--color-divider); }
 .assignee-patient { font-size: 13px; overflow-wrap: anywhere; }
