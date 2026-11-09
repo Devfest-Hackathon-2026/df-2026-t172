@@ -13,7 +13,7 @@
 | 移す | 移さない |
 |---|---|
 | `backend/`（`.venv/`・キャッシュは除く。Git に入っていないので下の手順なら自然に除かれる） | `.env` などの秘密情報（そもそも Git に入れていない） |
-| `frontend/` | `docs/submission/pre-submit-checklist.md`（アカウント名が入っている） |
+| `frontend/` | `docs/submission/pre-submit-checklist.md`（アカウント名が入っている）。`docs/submission/README.md`（提出物チェックリスト）・`product-doc.md`・`demo-video.md`（Drive に出す資料の骨組み。下書きのままで、審査員が見ると未完成に見えるため。11/10 決定：移さない） |
 | `Dockerfile`・`.dockerignore`・`.gitignore`・`firestore.rules` | `spike/`（技術検証のコード。11/9 決定：移さない） |
 | `docs/adr/`・`docs/design/` | （`docs/research/` は 11/9 に移すことに変更。ヒアリングの記録は相手の名前・病院名がないことを読み直して確かめた。既存製品の調査も、他社の製品名を出さない決まり（H-01）は「プロダクトで Google 以外の製品を使わない」の意味なので、資料として載せてよいと判断） |
 | `docs/submission/` のうち審査に役立つもの（`architecture.md`・`judges-guide.md`・`ai-usage-log.md` など） | `docs/submission/judging-map.md`・`docs/schedule.md`（内部の作業メモに近い。11/9 決定：移さない） |
@@ -70,7 +70,7 @@ cd df-2026-t172
 
 # 3. 書き出したファイルを展開し、移さないものを消す
 tar -xf ../export.tar
-rm -rf spike docs/schedule.md LICENSE \n       docs/submission/pre-submit-checklist.md docs/submission/judging-map.md
+rm -rf spike docs/schedule.md LICENSE \n       docs/submission/pre-submit-checklist.md docs/submission/judging-map.md \n       docs/submission/README.md docs/submission/product-doc.md docs/submission/demo-video.md
 git checkout LICENSE                            # 運営の LICENSE に戻す
 cp docs/submission/submission-readme.md README.md && rm docs/submission/submission-readme.md
 
@@ -89,5 +89,5 @@ git push
 
 ## 4. 送った後
 
-- 提出用リポジトリの README に、デプロイした URL（live）が書いてあること（[提出物チェックリスト](README.md)）
+- 提出用リポジトリの README に、デプロイした URL（live）が書いてあること（開発用リポジトリの [提出物チェックリスト](README.md)）
 - GitHub の画面で、公開されたファイルの一覧に 1章の「移さない」ものがないこと
