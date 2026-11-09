@@ -16,8 +16,8 @@
 |---|---|
 | プロダクト説明ドキュメント | 誰の、どんな課題か、何を作ったか、なぜこの作りか、合言葉 |
 | プレゼン動画（デモを含む） | 一連の流れを止めずに動かしたデモと、作った理由 |
-| 著作物利用シート | 使ったライブラリ・素材とライセンス（リポジトリの [license-sheet.md](docs/submission/license-sheet.md) と同じ内容） |
-| Google Cloud アーキテクチャ図 | 公式アイコンで描いた構成図（リポジトリの [architecture.md](docs/submission/architecture.md) が元） |
+| 著作物利用シート | 使ったライブラリ・素材とライセンス |
+| Google Cloud アーキテクチャ図 | 構成図（リポジトリの [architecture.md](docs/submission/architecture.md) にも同じ図と詳しい説明がある） |
 
 ### リポジトリの中の資料
 
@@ -86,4 +86,4 @@ PASSCODE=12文字以上の合言葉 MODE=mock .venv/Scripts/python -m uvicorn --
 
 ## ライセンス
 
-[MIT](LICENSE)。使ったライブラリとライセンスは [著作物利用シート](docs/submission/license-sheet.md)。
+[MIT](LICENSE)。使ったライブラリとライセンスは、提出物の著作物利用シート（Google Drive）に書いた。

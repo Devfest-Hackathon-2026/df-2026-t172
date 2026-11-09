@@ -1,6 +1,8 @@
-# アーキテクチャ図（下書き）
+# アーキテクチャ図
 
-提出用には、Google Cloud の公式アイコン（https://cloud.google.com/icons）を使って描き直す（配置・アイコン・矢印の文言は [図の描き方の下書き](architecture-diagram-draft.md)。提出用の図は要素を絞って簡略にし、細かい処理はこの文書の表に残す）。ここでは構成だけを置く。中身は [設計](../design/README.md) 5・8・10章、API と保存の形は [データの形](../design/data-model.md)、守らせる決まりは [決まりの一覧](../design/rules.md)。技術構成は [ADR-0003](../adr/0003-runtime-and-stack.md)、モデルは [ADR-0004](../adr/0004-model.md)（`gemini-3.5-flash`・`global` に決定）。
+![NurseNote の Google Cloud アーキテクチャ図](architecture.png)
+
+上の図は要素を絞った全体像。細かい処理（音声の区切り方・秘密情報のバージョン固定・ログに出さないものなど）は、下の図と表に書く。中身は [設計](../design/README.md) 5・8・10章、API と保存の形は [データの形](../design/data-model.md)、守らせる決まりは [決まりの一覧](../design/rules.md)。技術構成は [ADR-0003](../adr/0003-runtime-and-stack.md)、モデルは [ADR-0004](../adr/0004-model.md)（`gemini-3.5-flash`・`global` に決定）。
 
 ```mermaid
 flowchart LR
