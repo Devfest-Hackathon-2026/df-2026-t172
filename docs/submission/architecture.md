@@ -2,6 +2,8 @@
 
 ![NurseNote の Google Cloud アーキテクチャ図](architecture.png)
 
+アイコンは Google Cloud の公式プロダクトアイコン（https://cloud.google.com/icons 、2025年版）。固有のアイコンがないサービスは、公式の決まりどおりカテゴリのアイコンを使った（Speech-to-Text は AI・機械学習、Firestore はデータベース、Secret Manager はセキュリティ、Cloud Logging はオブザーバビリティ、Cloud Billing は管理ツール）。
+
 上の図は要素を絞った全体像。細かい処理（音声の区切り方・秘密情報のバージョン固定・ログに出さないものなど）は、下の図と表に書く。中身は [設計](../design/README.md) 5・8・10章、API と保存の形は [データの形](../design/data-model.md)、守らせる決まりは [決まりの一覧](../design/rules.md)。技術構成は [ADR-0003](../adr/0003-runtime-and-stack.md)、モデルは [ADR-0004](../adr/0004-model.md)（`gemini-3.5-flash`・`global` に決定）。
 
 ```mermaid
