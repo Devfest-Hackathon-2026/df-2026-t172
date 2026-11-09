@@ -17,7 +17,6 @@
 | プロダクト説明ドキュメント | 誰の、どんな課題か、何を作ったか、なぜこの作りか、合言葉 |
 | プレゼン動画（デモを含む） | 一連の流れを止めずに動かしたデモと、作った理由 |
 | 著作物利用シート | 使ったライブラリ・素材とライセンス |
-| Google Cloud アーキテクチャ図 | 構成図（リポジトリの [architecture.md](docs/submission/architecture.md) にも同じ図と詳しい説明がある） |
 
 ### リポジトリの中の資料
 
@@ -25,10 +24,10 @@
 |---|---|
 | [AI の利用記録](docs/submission/ai-usage-log.md) | 開発で AI をどの場面で、なぜ使ったか。**採らなかった提案と、人が直したこと**も書いた |
 | [審査員向けの使い方](docs/submission/judges-guide.md) | 5分で試す手順と、試す前に知っておいてほしいこと |
+| [Google Cloud アーキテクチャ図](docs/submission/architecture.md) | 公式アイコンで描いた構成図と、各サービスの使い方・データの流れ・保存するもの／しないもの |
 | [ヒアリング記録](docs/research/hearing.md) | 病棟の看護師に聞いた事実と、そこからチームが決めたこと（聞いた事実と解釈を分けて書いた） |
 | [既存製品の調査](docs/research/existing-products.md) | 看護記録の AI の既存製品と、このプロダクトとの違い |
 | [設計の判断の記録（ADR）](docs/adr/README.md) | テーマの選び方、AI に任せる範囲、Gemini と Vertex AI・Cloud Run を選んだ理由 |
-| [構成](docs/submission/architecture.md) | Google Cloud の各サービスの使い方と、データの流れ |
 | [守らせる決まり](docs/design/rules.md) | 安全・個人情報・費用の決まりと、それを確かめるテスト |
 | [設計](docs/design/README.md)・[データの形](docs/design/data-model.md)・[利用シーン](docs/design/scenarios.md) | 画面と API の設計、デモで使う架空の場面 |
 
