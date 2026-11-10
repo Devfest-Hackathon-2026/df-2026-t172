@@ -20,7 +20,7 @@ import { refreshRecordingStatus, renderRecording } from "./screens/recording.js"
 import { renderProcessing } from "./screens/processing.js";
 import { refreshReviewStatus, renderReview } from "./screens/review.js?v=20261110-ainote";
 import { refreshExportDetails, renderExport } from "./screens/export.js";
-import { loadRecord, loadRecords } from "./history.js";
+import { loadRecord, loadRecords } from "./history.js?v=20261110-fix";
 import { loadPatients } from "./patients.js";
 import { renderHistory } from "./screens/history.js?v=20261109-color";
 import { renderRecordDetail } from "./screens/record-detail.js";

@@ -36,8 +36,8 @@ export async function loadRecords(options = {}) {
 
 export async function loadRecord(requestedId, options = {}) {
   // 確定した人（自己申告）を名前で出すため、看護師の一覧も読みます（読めなければ id のまま出します）
-  const [{ record }] = await Promise.all([getRecord(requestedId, options), ensureNurses(options)]);
-  if (!id(record.patient_id) || !record.record_id.startsWith(`r_${record.patient_id}_`)
+  const { record } = await getRecord(requestedId, options);
+  await ensureNurses(options); if (!id(record.patient_id) || !record.record_id.startsWith(`r_${record.patient_id}_`)
     || !text(record.room) || !text(record.name) || !date(record.created_at)
     || (record.full_name !== undefined && !text(record.full_name))
     || !text(record.chart_text) || !record.chart_text.trim()
@@ -64,13 +64,17 @@ export async function loadRecord(requestedId, options = {}) {
     created_at: record.created_at, chart_text: record.chart_text,
     vitals: record.vitals.map(({ item, value, source, evidence }) => ({ item, value, source, evidence: [...evidence] })),
     soap: { S: record.soap.S.map(copySentence), O: record.soap.O.map(copySentence), A: record.soap.A, P: record.soap.P },
-    requests: record.requests.map((r) => ({ ...copySentence(r), urgency: r.urgency,
-      cue: r.cue ? { kind: r.cue.kind, text: r.cue.text, evidence: [...r.cue.evidence] } : null })),
+    requests: record.requests.map((r) => ({
+      ...copySentence(r), urgency: r.urgency,
+      cue: r.cue ? { kind: r.cue.kind, text: r.cue.text, evidence: [...r.cue.evidence] } : null
+    })),
     manual_needed: record.manual_needed.map(copySentence), doctor_questions: record.doctor_questions.map(copySentence),
     evidence_utterances: record.evidence_utterances.map(({ id, speaker, text }) => ({ id, speaker, text })),
     kept_after_check: record.kept_after_check.map(({ path, codes, note }) => ({ path, codes: [...codes], note })),
-    patient_check: { level: record.patient_check.level, confirmed_by_nurse: record.patient_check.confirmed_by_nurse,
-      note: record.patient_check.note },
+    patient_check: {
+      level: record.patient_check.level, confirmed_by_nurse: record.patient_check.confirmed_by_nurse,
+      note: record.patient_check.note
+    },
     // 確定した看護師の自己申告（S-08）。前からある記録にはないので null にします
     confirmed_reported_by: record.confirmed_reported_by ?? null,
   };
