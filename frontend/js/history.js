@@ -1,5 +1,5 @@
-import { ApiError, getRecord, getRecords } from "./api.js";
-import { ensureNurses } from "./assignment.js";
+import { ApiError, getRecord, getRecords, patchRecord } from "./api.js?v=20261121-context-help";
+import { ensureNurses } from "./assignment.js?v=20261121-context-help";
 
 const text = (value) => typeof value === "string";
 const id = (value) => text(value) && /^[A-Za-z0-9_-]{1,40}$/.test(value);
@@ -11,6 +11,7 @@ const items = (value, validate) => Array.isArray(value) && value.every(validate)
 const origin = (value) => value === undefined || ["ai", "nurse"].includes(value);
 const sentence = (value) => value && text(value.text) && evidence(value.evidence) && origin(value.added_by);
 const cue = (value) => value === null || (sentence(value) && ["時間指定", "患者が急ぎと言った"].includes(value.kind));
+const optionalLabel = (value) => value === undefined || (text(value) && Boolean(value.trim()) && value.length <= 40);
 const invalid = () => new ApiError("記録を読み取れませんでした。", { code: "invalid_response" });
 
 function summary(value) {
@@ -37,15 +38,28 @@ export async function loadRecords(options = {}) {
 export async function loadRecord(requestedId, options = {}) {
   // 確定した人（自己申告）を名前で出すため、看護師の一覧も読みます（読めなければ id のまま出します）
   const { record } = await getRecord(requestedId, options);
-  await ensureNurses(options); if (!id(record.patient_id) || !record.record_id.startsWith(`r_${record.patient_id}_`)
+  await ensureNurses(options);
+  return readRecord(record);
+}
+
+export async function updateRecord(record, changes, options = {}) {
+  const result = await patchRecord(record.record_id, { revision: record.revision, changes }, options);
+  if (result.record.patient_id !== record.patient_id) throw invalid();
+  return readRecord(result.record);
+}
+
+function readRecord(record) {
+  if (!id(record.patient_id) || !record.record_id.startsWith(`r_${record.patient_id}_`)
     || !text(record.room) || !text(record.name) || !date(record.created_at)
     || (record.full_name !== undefined && !text(record.full_name))
     || !text(record.chart_text) || !record.chart_text.trim()
     || !items(record.vitals, (v) => v && text(v.item) && text(v.value) && evidence(v.evidence)
       && ["conversation", "manual"].includes(v.source))
-    || !record.soap || !items(record.soap.S, sentence) || !items(record.soap.O, sentence)
+    || !record.soap || !items(record.soap.S, soapSentence) || !items(record.soap.O, soapSentence)
     || !text(record.soap.A) || !text(record.soap.P)
-    || !items(record.requests, (r) => sentence(r) && ["said_urgent", "timed", "none"].includes(r.urgency) && cue(r.cue))
+    || !items(record.requests, (r) => sentence(r) && ["said_urgent", "timed", "none"].includes(r.urgency)
+      && cue(r.cue) && optionalLabel(r.category) && optionalLabel(r.role)
+      && (r.task_id == null || (text(r.task_id) && /^[A-Za-z0-9_-]{1,90}$/.test(r.task_id))))
     || !items(record.manual_needed, sentence) || !items(record.doctor_questions, sentence)
     || !items(record.evidence_utterances, (u) => u && text(u.id) && text(u.text)
       && ["nurse", "patient", "unknown"].includes(u.speaker))
@@ -54,18 +68,25 @@ export async function loadRecord(requestedId, options = {}) {
     || !record.patient_check || !["ok", "confirm", "stop"].includes(record.patient_check.level)
     || typeof record.patient_check.confirmed_by_nurse !== "boolean"
     || !(record.patient_check.note === null || text(record.patient_check.note))
-    || !(record.confirmed_reported_by == null || id(record.confirmed_reported_by))) throw invalid();
+    || !(record.confirmed_reported_by == null || id(record.confirmed_reported_by))
+    || !(record.revision === undefined || (Number.isSafeInteger(record.revision) && record.revision >= 0))
+    || !(record.care_plans === undefined || items(record.care_plans, (p) => p && id(p.id) && text(p.label)))
+    || !(record.amended_paths === undefined || strings(record.amended_paths))) throw invalid();
 
   // 応答に余分な欄があっても、音声や会話全文を履歴の状態に持ち込みません。
   const copySentence = ({ text, evidence, added_by }) => ({ text, evidence: [...evidence], added_by: added_by ?? "ai" });
+  const copyPlanSentence = (s) => ({ ...copySentence(s), plan_id: s.plan_id ?? null });
   return {
     record_id: record.record_id, patient_id: record.patient_id, room: record.room, name: record.name,
     full_name: typeof record.full_name === "string" ? record.full_name : "",
     created_at: record.created_at, chart_text: record.chart_text,
+    revision: record.revision ?? 0, amended_paths: [...(record.amended_paths ?? [])],
+    care_plans: (record.care_plans ?? []).map(({ id, label }) => ({ id, label })),
     vitals: record.vitals.map(({ item, value, source, evidence }) => ({ item, value, source, evidence: [...evidence] })),
-    soap: { S: record.soap.S.map(copySentence), O: record.soap.O.map(copySentence), A: record.soap.A, P: record.soap.P },
+    soap: { S: record.soap.S.map(copyPlanSentence), O: record.soap.O.map(copyPlanSentence), A: record.soap.A, P: record.soap.P },
     requests: record.requests.map((r) => ({
-      ...copySentence(r), urgency: r.urgency,
+      ...copySentence(r), urgency: r.urgency, task_id: r.task_id ?? null,
+      category: r.category ?? "その他", role: r.role ?? "その他",
       cue: r.cue ? { kind: r.cue.kind, text: r.cue.text, evidence: [...r.cue.evidence] } : null
     })),
     manual_needed: record.manual_needed.map(copySentence), doctor_questions: record.doctor_questions.map(copySentence),
@@ -78,6 +99,10 @@ export async function loadRecord(requestedId, options = {}) {
     // 確定した看護師の自己申告（S-08）。前からある記録にはないので null にします
     confirmed_reported_by: record.confirmed_reported_by ?? null,
   };
+}
+
+function soapSentence(value) {
+  return sentence(value) && (value.plan_id == null || id(value.plan_id));
 }
 
 const timeFormat = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });

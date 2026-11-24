@@ -1,5 +1,5 @@
-import { ApiError, getAllTasks, getOpenTasks, patchTask } from "./api.js?v=20261109-local-category";
-import { reportedBy } from "./assignment.js";
+import { ApiError, getAllTasks, getOpenTasks, patchTask } from "./api.js?v=20261121-context-help";
+import { reportedBy } from "./assignment.js?v=20261121-context-help";
 
 export const taskGroups = Object.freeze([
   { value: "said_urgent", label: "急ぎと言われた" },
@@ -13,7 +13,7 @@ export function taskCategory(task) {
 
 // 既存APIの受け付ける値（backend/app/models/labels.py）に合わせた画面用の選択肢。
 // 分類一覧APIは追加せず、保存には既存の PATCH /api/tasks/{id} を使います。
-const taskCategories = Object.freeze([
+export const taskCategories = Object.freeze([
   "物品", "食事", "排泄", "移動", "付き添い", "清潔", "着替え", "体調",
   "痛みの訴え", "医師への確認", "その他",
 ]);

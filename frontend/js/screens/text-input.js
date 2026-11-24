@@ -1,6 +1,6 @@
 import { element, reviewButton } from "../components/review-dom.js";
-import { displayName } from "../patients.js";
-import { transcriptError } from "../records.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
+import { transcriptError } from "../records.js?v=20261121-context-help";
 
 export function renderTextInput(patient, transcript) {
   const view = element("section", "text-input-screen");

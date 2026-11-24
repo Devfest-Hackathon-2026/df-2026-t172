@@ -22,6 +22,7 @@ from app.models.draft import Utterance
 from app.models.limits import MAX_UTTERANCES
 from app.routes.deps import client_key, find_patient, services, settings, with_current_assignee
 from app.routes.draft_input import DraftInput, audio_too_long, read_draft_input
+from app.services.care_plan import clear_plan_ids
 from app.services.drafting import build_draft, run_entail
 from app.services.first_speaker import apply_to_audio, apply_to_text
 from app.services.mock_data import load_mock_draft, scenario_for_patient
@@ -156,5 +157,9 @@ async def create_draft(
     """音声かテキストと、選んだ患者から、下書き・照合の結果・患者の照合を返す。"""
     given = await read_draft_input(request, cfg)
     response = await run_in_threadpool(make_draft, svc, cfg, given, client_key(request))
+    # 看護計画を付けるのは看護師だけ（A-14）。見本のファイルや Gemini の出力によらず消す
+    draft = clear_plan_ids(response.draft)
     # AI が書いた要素の印。確定のとき、看護師が足したと偽った要素を見分ける（A-12）
-    return response.model_copy(update={"draft_token": svc.draft_tokens.issue(response.draft)})
+    return response.model_copy(
+        update={"draft": draft, "draft_token": svc.draft_tokens.issue(draft)}
+    )

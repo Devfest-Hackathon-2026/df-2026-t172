@@ -37,6 +37,7 @@ def test_patients(mock_client: TestClient) -> None:
     assert body["mode"] == "mock"
     assert body["patients"][0] == {
         "id": "p302", "room": "302", "bed": "A", "name": "田中", "kana": "たなか", "full_name": "田中 一郎", "full_kana": "たなか いちろう", "ward": "東3病棟", "assigned_to": "n01", "assigned_reported_by": None,
+        "care_plans": [{"id": "cp01", "label": "#急性疼痛"}, {"id": "cp02", "label": "#感染リスク状態"}],
     }  # fmt: skip
 
 

@@ -6,10 +6,13 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from app.config import BACKEND_DIR
 from app.models.api import DraftResponse, Patient
 from app.models.nurse import Nurse
 from app.services.clock import expires_at
+from app.services.safe_log import log_event
 
 MOCK_DIR = BACKEND_DIR / "mock"
 SEED_PATIENTS = BACKEND_DIR / "seed" / "patients.json"
@@ -22,9 +25,52 @@ def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+class SeedInvalidError(RuntimeError):
+    """名簿seed が形や条件に合わない（起動を止める）。"""
+
+
+def _duplicate_plan_ids(patients: list[Patient]) -> list[dict[str, Any]]:
+    """名簿全体で看護計画の id が重なる所（2人目以降）。id の値は返さない。"""
+    seen: set[str] = set()
+    found = []
+    for i, p in enumerate(patients):
+        for j, plan in enumerate(p.care_plans):
+            if plan.id in seen:
+                found.append(
+                    {"index": i, "loc": f"care_plans.{j}.id", "type": "duplicate_care_plan_id"}
+                )
+            seen.add(plan.id)
+    return found
+
+
 def load_patients() -> list[Patient]:
-    """架空の名簿（`backend/seed/patients.json`）。"""
-    return [Patient.model_validate(p) for p in _read_json(SEED_PATIENTS)]
+    """架空の名簿（`backend/seed/patients.json`）。
+
+    形や看護計画の条件に合わなければ、場所と種類だけをログに出して止める
+    （care-plan-soap の要件1の9）。値（患者名・看護計画の名前）はログにもエラーの文にも
+    出さない（P-04。pydantic の例外の文は入力の値を含むので使わない）。
+
+    Raises:
+        SeedInvalidError: 1人でも条件に合わない場合
+    """
+    errors: list[dict[str, Any]] = []
+    patients: list[Patient] = []
+    for i, raw in enumerate(_read_json(SEED_PATIENTS)):
+        try:
+            patients.append(Patient.model_validate(raw))
+        except ValidationError as e:
+            errors += [
+                {"index": i, "loc": ".".join(str(x) for x in err["loc"]), "type": err["type"]}
+                for err in e.errors()
+            ]
+    if not errors:
+        errors = _duplicate_plan_ids(patients)
+    if errors:
+        log_event("seed_invalid", severity="ERROR", file=SEED_PATIENTS.name, errors=errors[:5])
+        raise SeedInvalidError(
+            "名簿seed が条件に合いません（ログの seed_invalid を見てください）"
+        ) from None
+    return patients
 
 
 def load_nurses() -> list[Nurse]:

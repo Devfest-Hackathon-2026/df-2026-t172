@@ -7,6 +7,7 @@ from app.container import Services
 from app.errors import ApiError
 from app.live.interfaces import GeminiClient
 from app.models.api import RecordResponse
+from app.models.draft import Draft
 from app.models.record_request import RecordRequest
 from app.routes.deps import (
     client_key,
@@ -16,6 +17,7 @@ from app.routes.deps import (
     settings,
     with_current_assignee,
 )
+from app.services.chart import chart_text
 from app.services.clock import now_jst
 from app.services.confirm import confirm_record
 from app.services.drafting import EntailRecheck, recheck_entail
@@ -69,7 +71,14 @@ def create_record(
         )
 
     confirmed = confirm_record(body, patient, svc.roster, now_jst(), judge_entail, relabelled)
-    svc.store.save_record(confirmed.record_id, confirmed.record, confirmed.tasks)
+    current = svc.store.save_record(confirmed.record_id, confirmed.record, confirmed.tasks)
+    if current is not None:
+        return RecordResponse(
+            mode=cfg.mode,
+            record_id=confirmed.record_id,
+            chart_text=chart_text(patient, Draft.model_validate(current), current["created_at"]),
+            tasks_created=[row["task_id"] for row in current["requests"] if row.get("task_id")],
+        )
     return RecordResponse(
         mode=cfg.mode,
         record_id=confirmed.record_id,

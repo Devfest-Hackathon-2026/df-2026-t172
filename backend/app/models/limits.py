@@ -19,6 +19,8 @@ MAX_ID_CHARS = 40
 # 記録・タスクに残す発言の文の長さと、タスクに残す「患者の発言そのまま」の数（P-02）
 MAX_SAVED_CHARS = 1000
 MAX_PATIENT_WORDS = 3
+MAX_CARE_PLANS = 10  # 1人の患者の看護計画の数（仮置き、care-plan-soap の要件1）
+MAX_CARE_PLAN_LABEL_CHARS = 100  # 看護計画の名前の字数（仮置き）
 
 ID_PATTERN = rf"^[A-Za-z0-9_-]{{1,{MAX_ID_CHARS}}}$"
 

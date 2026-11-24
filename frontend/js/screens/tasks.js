@@ -1,10 +1,10 @@
-import { displayName } from "../patients.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element } from "../components/review-dom.js";
-import { createIcon } from "../components/icons.js";
-import { renderTaskCard } from "../components/task-card.js?v=20261110-assign";
-import { renderAssigneeTable, renderTaskScope } from "../components/task-assign.js?v=20261110-assign";
-import { getTaskScope, scopedTasks } from "../assignment.js";
-import { groupOpenTasks, taskPatients, visibleTasks } from "../tasks.js?v=20261110-assign";
+import { createIcon } from "../components/icons.js?v=20261121-context-help";
+import { renderTaskCard } from "../components/task-card.js?v=20261121-context-help";
+import { renderAssigneeTable, renderTaskScope } from "../components/task-assign.js?v=20261121-context-help";
+import { getTaskScope, scopedTasks } from "../assignment.js?v=20261121-context-help";
+import { groupOpenTasks, taskPatients, visibleTasks } from "../tasks.js?v=20261121-context-help";
 
 export function renderTasks(state) {
   const view = element("section", "tasks-screen");

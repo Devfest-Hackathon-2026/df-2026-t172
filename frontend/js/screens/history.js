@@ -1,7 +1,7 @@
-import { displayName } from "../patients.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element } from "../components/review-dom.js";
-import { createIcon } from "../components/icons.js";
-import { recordTime } from "../history.js";
+import { createIcon } from "../components/icons.js?v=20261121-context-help";
+import { recordTime } from "../history.js?v=20261121-context-help";
 
 export function historyButton(label, action, className = "secondary-button") {
   const button = element("button", className, label);

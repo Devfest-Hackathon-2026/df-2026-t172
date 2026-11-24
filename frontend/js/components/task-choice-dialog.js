@@ -1,6 +1,6 @@
-import { displayName } from "../patients.js";
-import { taskCategory, taskGroups } from "../tasks.js?v=20261110-assign";
-import { createIcon } from "./icons.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
+import { taskCategory, taskGroups } from "../tasks.js?v=20261121-context-help";
+import { createIcon } from "./icons.js?v=20261121-context-help";
 import { element } from "./review-dom.js";
 
 /** assignees は担当の選択肢（看護師の一覧、S-08）。空なら担当の欄を出しません。 */

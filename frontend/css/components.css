@@ -225,6 +225,34 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 
 .task-choice-dialog { width: min(360px, calc(100% - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); margin: auto; padding: 20px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--color-border); border-radius: 18px; background: var(--color-background); color: var(--color-text); box-shadow: 0 16px 48px #182A4633; }
 .task-choice-dialog form { display: flex; flex-direction: column; max-height: calc(100vh - 74px); max-height: calc(100dvh - 74px); }
+.record-confirmation-dialog {
+  position: fixed;
+  inset: var(--app-top) 0 auto;
+  width: var(--app-width);
+  height: var(--app-height);
+  max-width: none;
+  max-height: none;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--app-radius);
+  background: #182A4680;
+  color: var(--color-text);
+}
+.record-confirmation-dialog[open] { display: flex; flex-direction: column; justify-content: center; }
+.record-confirmation-dialog form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-background);
+}
+.record-confirmation-dialog::backdrop { background: transparent; }
 .task-choice-body { min-height: 0; padding: 3px; margin: -3px; overflow-y: auto; overscroll-behavior: contain; }
 .task-choice-heading, .task-choice-actions { flex-shrink: 0; }
 .task-choice-dialog::backdrop { background: #182A4680; }
@@ -388,6 +416,7 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 .record-soap-letter { display: grid; flex-shrink: 0; width: 28px; height: 28px; place-items: center; border-radius: 7px; background: var(--color-primary-soft); color: var(--color-primary); font-size: 15px; }
 .record-body { margin: 0; font-size: 16px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
 .record-sentence + .record-sentence { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-divider); }
+.record-request-meta { margin: 2px 0 6px; color: var(--color-muted); font-size: 12px; line-height: 1.6; }
 .record-empty { margin: 0; font-size: 16px; line-height: 1.5; }
 .record-soap-section:has(> .record-empty) { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .record-soap-section:has(> .record-empty) .record-soap-heading { margin: 0; }
@@ -416,10 +445,18 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 .record-card-arrow { color: var(--color-primary); font-size: 20px; line-height: 1; }
 .record-card-name { margin: 0; font-size: 18px; font-weight: 750; line-height: 1.5; overflow-wrap: anywhere; }
 .record-preview { display: -webkit-box; min-height: 3.2em; margin: 6px 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.6; }
-.history-back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: 4px; color: var(--color-primary); font-size: 13px; text-decoration: none; }
-.record-detail-screen .page-title { margin-bottom: 18px; }
+.saved-record-actions { display: grid; gap: 10px; margin-top: 18px; }
+.saved-record-actions > [hidden] { display: none; }
+.record-edit-screen > .patient-room { margin: 2px 0 16px; }
+.record-edit-fields, .record-edit-rows { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.record-edit-list, .record-edit-row { display: grid; gap: 10px; }
+.record-edit-row + .record-edit-row { padding-top: 12px; border-top: 1px solid var(--color-divider); }
+.record-edit-row > button { justify-self: end; }
+.record-edit-field { display: grid; gap: 4px; color: var(--color-muted); font-size: 13px; }
+.record-edit-field > :is(input, textarea, select) { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 16px; }
+.record-edit-field > textarea { resize: vertical; }
 .saved-record-meta { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 16px; }
-.saved-record-meta h2 { flex-basis: 100%; }
+.saved-record-meta .record-card-name { flex-basis: 100%; }
 .saved-record-meta time { margin-left: auto; color: var(--color-muted); font-size: 12px; }
 .saved-check-note { margin: 16px 0; color: var(--color-muted); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
 
@@ -482,6 +519,57 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 .alert-card[data-level="pending"] { border-color: var(--color-border); background: var(--color-surface-subtle); }
 .alert-card[data-level="pending"] .alert-level { color: var(--color-muted); }
 .request-cue { margin-top: 10px; }
+
+/* 看護計画は既存の警告色と分け、文字と見出しで示す。 */
+.care-plan-help { color: var(--color-muted); font-size: 14px; line-height: 1.7; margin: 8px 0 16px; }
+.care-plan-group { border: 1px solid var(--color-border); border-radius: 12px; padding: 14px; margin-block: 14px; min-width: 0; }
+.care-plan-heading { color: var(--color-text); font-size: 16px; line-height: 1.6; margin: 0 0 12px; overflow-wrap: anywhere; }
+.care-plan-group > .soap-title { font-size: 14px; margin-block: 18px 8px; }
+.care-plan-label { display: grid; gap: 6px; margin-block: 12px; color: var(--color-muted); font-size: 13px; min-width: 0; }
+.care-plan-select { width: 100%; max-width: 100%; min-height: 44px; color: var(--color-text); }
+.sentence-label { color: var(--color-muted); font-size: 13px; }
+.sentence-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.sentence-tools button, .sentence-split-editor button { min-height: 44px; }
+.sentence-split-editor { display: grid; gap: 12px; padding: 14px; margin-top: 8px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface-subtle); }
+.sentence-split-editor .form-label { display: grid; gap: 6px; }
+.sentence-split-editor .textarea { min-height: 90px; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.guide-trigger, .guide-close { min-height: 44px; white-space: nowrap; }
+.usage-guide {
+  width: min(calc(100% - 24px), 410px);
+  max-height: 85vh;
+  max-height: 85dvh;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.usage-guide::backdrop { background: rgb(16 32 61 / 42%); }
+.guide-heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  position: sticky; top: 0; background: var(--color-surface);
+  padding: 4px 16px; border-bottom: 1px solid var(--color-divider);
+}
+.guide-heading .guide-title { margin: 0; }
+.guide-body { padding: 16px; }
+@media (max-width: 480px) {
+  .usage-guide { width: 100%; max-width: none; margin: auto 0 0; border-radius: 16px 16px 0 0; }
+  .guide-body { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+.review-plan-guide { margin: 0 0 12px; }
+.review-plan-guide summary {
+  min-height: 44px; align-content: center; cursor: pointer;
+  color: var(--color-primary); font-size: 13px; font-weight: 650;
+}
+.export-edit-help { margin: 0; color: var(--color-muted); font-size: 13px; line-height: 1.6; }
+.guide-title { font-size: 18px; margin: 0 0 12px; line-height: 1.5; }
+.guide-steps { padding-left: 22px; margin: 0; }
+.guide-steps li { padding-left: 4px; margin-bottom: 12px; line-height: 1.6; }
+.guide-steps strong { font-size: 14px; }
+.guide-steps p { color: var(--color-muted); font-size: 13px; margin: 4px 0 0; }
 .evidence-picker[open] { padding-bottom: 6px; }
 .evidence-choice { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; cursor: pointer; }
 .evidence-choice input { flex-shrink: 0; width: 20px; height: 20px; margin: 4px 0 0; accent-color: var(--color-primary); }
@@ -504,3 +592,9 @@ button.task-main-button { cursor: pointer; user-select: none; -webkit-user-selec
 .assignee-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 9em); gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--color-divider); }
 .assignee-patient { font-size: 13px; overflow-wrap: anywhere; }
 .assignee-select { min-height: 40px; }
+
+/* 初回案内の補足は、必要なときに開いて読める。 */
+.guide-details { margin: 8px 0 16px; font-size: 13px; line-height: 1.6; }
+.guide-details summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-weight: 650; }
+.guide-details p, .guide-note { color: var(--color-muted); font-size: 13px; line-height: 1.6; margin: 8px 0; }
+.guide-subtitle { font-size: 14px; margin: 16px 0 4px; }

@@ -1,4 +1,4 @@
-import { displayName } from "../patients.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element, reviewButton } from "../components/review-dom.js";
 
 export function renderProcessing(patient, error, inputMethod = "audio") {

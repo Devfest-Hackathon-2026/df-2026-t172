@@ -14,6 +14,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from app.checks.patient_match import match_patient
 from app.checks.verify import verify
@@ -21,6 +22,7 @@ from app.errors import ApiError
 from app.models.api import Patient, PatientMatch
 from app.models.draft import Check, Draft
 from app.models.record_request import RecordRequest
+from app.services.care_plan import ensure_known_care_plans, plan_log_fields
 from app.services.chart import chart_text
 from app.services.decisions import InvalidPathError, apply_decisions
 from app.services.drafting import EntailRecheck
@@ -77,6 +79,7 @@ def _log_confirmed(
     stop_count: int,
     entail_rejudged: int,
     relabelled: int,
+    care_plan_counts: dict[str, Any],
 ) -> None:
     """計測用の操作記録（設計 9章）。時刻・色・数だけを出す（P-04：会話の文・患者名は出さない）。
 
@@ -99,6 +102,7 @@ def _log_confirmed(
         relabelled_as_ai=relabelled,
         ui_counts=req.ui_counts.model_dump(),
         reported_by=req.reported_by,
+        **care_plan_counts,  # 看護計画は数だけ（care-plan-soap の要件9、P-04）
     )
 
 
@@ -117,8 +121,16 @@ def confirm_record(
     「看護師が足した」から AI の要素に戻した数（操作記録に出すだけ、A-12）。
 
     Raises:
-        ApiError: 確定を止める条件に当たる場合（409）、場所の指定が誤っている場合（422）
+        ApiError: 確定を止める条件に当たる場合（409）、場所の指定が誤っている場合（422）、
+            選んだ患者の看護計画にない plan_id がある場合（422、unknown_care_plan）
     """
+    # 選んだ患者の看護計画にない plan_id は、患者の確認と二段目より先に止める（R-03、決定8）。
+    # 記録を作る処理の先頭に置き、記録を作る入口が増えても通るようにする。
+    # 看護計画は渡された patient ではなく起動時の名簿（roster）から引き直す。保存先から
+    # 読んだ患者（live では care_plans が空）を渡されても、名簿seed の値で照らすため
+    found = next((p for p in roster if p.id == patient.id), None)
+    patient = patient.model_copy(update={"care_plans": list(found.care_plans) if found else []})
+    ensure_known_care_plans(req.draft, patient.care_plans)
     match = match_patient(patient, roster, req.utterances)
     _ensure_patient_confirmed(req, match, patient)
     entail = judge_entail()
@@ -130,9 +142,11 @@ def confirm_record(
         raise ApiError(422, "invalid_decision", f"下書きにない場所が指されています（{e}）") from e
 
     record_id = f"r_{patient.id}_{req.confirm_id}"
+    tasks = task_documents(patient, record_id, final, req.utterances, now)
     record = record_document(
         patient=patient,
         draft=final,
+        task_ids=[task["id"] for task in tasks],
         utterances=req.utterances,
         decisions=req.decisions,
         kept=kept_after_check(kept_paths, stop_checks),
@@ -140,10 +154,19 @@ def confirm_record(
         now=now,
         reported_by=req.reported_by,
     )
-    _log_confirmed(record_id, req, match, final, len(stop_checks), entail.rejudged, relabelled)
+    _log_confirmed(
+        record_id,
+        req,
+        match,
+        final,
+        len(stop_checks),
+        entail.rejudged,
+        relabelled,
+        plan_log_fields(final, patient.care_plans),
+    )
     return Confirmed(
         record_id=record_id,
         chart_text=chart_text(patient, final, now),
         record=record,
-        tasks=task_documents(patient, record_id, final, req.utterances, now),
+        tasks=tasks,
     )

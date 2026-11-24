@@ -37,7 +37,7 @@ sequenceDiagram
 | 日時 | ISO 8601、日本時間（例 `2026-11-08T09:15:00+09:00`） |
 | 合言葉 | すべての API で、ヘッダー `X-Passcode` に入れる。違えば `401` |
 | モード | すべての応答に `"mode": "mock"` か `"live"` を入れる。画面の隅に常に出す |
-| エラー | `{"mode": "...", "error": {"code": "...", "message": "..."}}`。`message` は画面にそのまま出せる日本語。主な状態コード：400 録音の同意の確認がない、401 合言葉、404 患者・タスクがない、409 確定できない、413 入力が大きすぎる（`body_too_large` JSON の本文が1MB 超、`audio_too_large` 録音が10MB 超、`too_many_utterances` 発言が201個以上、ほか `audio_too_long`・`transcript_too_long`）、422 入力の形・件数の上限（`invalid_request`）・読めない音声（`audio_unreadable`）、429 1日の上限（`daily_limit` 全体300回、`client_daily_limit` 接続元の IP ごと30回）、500 思わぬ失敗（中身は出さない）、502 Gemini・文字起こしの失敗（モックに切り替えない） |
+| エラー | `{"mode": "...", "error": {"code": "...", "message": "..."}}`。`message` は画面にそのまま出せる日本語。主な状態コード：400 録音の同意の確認がない、401 合言葉、404 患者・タスクがない、409 確定できない、413 入力が大きすぎる（`body_too_large` JSON の本文が1MB 超、`audio_too_large` 録音が10MB 超、`too_many_utterances` 発言が201個以上、ほか `audio_too_long`・`transcript_too_long`）、422 入力の形・件数の上限（`invalid_request`）・読めない音声（`audio_unreadable`）・選んだ患者の看護計画にない `plan_id`（`unknown_care_plan`、確定のとき）、429 1日の上限（`daily_limit` 全体300回、`client_daily_limit` 接続元の IP ごと30回）、500 思わぬ失敗（中身は出さない）、502 Gemini・文字起こしの失敗（モックに切り替えない） |
 | 動作確認 | `GET /api/health`（合言葉なし）→ `{"mode": "...", "status": "ok"}`。`/docs`・`/redoc`・`/openapi.json` は閉じている（404） |
 | 入力の上限 | 超えたら `422`。根拠の発言は重複を除いて3件、発言の列は200個、各文・各発言は5,000字、`soap.S`・`soap.O` は50文ずつ、バイタル・依頼・手で入力が必要・医師への確認は30件ずつ、id は英数字・`_`・`-` の40字まで（`backend/app/models/limits.py`） |
 
@@ -49,12 +49,21 @@ sequenceDiagram
 {
   "mode": "mock",
   "patients": [
-    {"id": "p302", "room": "302", "bed": "A", "name": "田中", "kana": "たなか", "full_name": "田中 一郎", "full_kana": "たなか いちろう", "ward": "東3病棟", "assigned_to": "n01"}
+    {"id": "p302", "room": "302", "bed": "A", "name": "田中", "kana": "たなか", "full_name": "田中 一郎", "full_kana": "たなか いちろう", "ward": "東3病棟", "assigned_to": "n01",
+     "care_plans": [{"id": "cp01", "label": "#急性疼痛"}, {"id": "cp02", "label": "#感染リスク状態"}]}
   ]
 }
 ```
 
 `assigned_to` は基本の受け持ちの看護師の id（S-08、`GET /api/nurses` の1人）。タスクの担当の初めの値になる。`PATCH /api/patients/{id}` で変えられるので、名簿は保存先の今の値を返す。
+
+`care_plans` は患者ごとの看護計画（看護上の問題と計画。例 `#急性疼痛`）。SOAP の P（計画）とは別のもの。
+
+- `care_plans` は必ず入る。看護計画のない患者は `[]`（欄を省かず、`null` にしない）
+- 並びは名簿seed の並び。確認画面の選択肢と欄はこの並びで出す
+- 各看護計画は `id` と `label` だけ。`id` は英数字・`_`・`-` の1〜40字。`label` は1〜100字、改行なし、前後に空白なし、「計画外」ではない。1人の患者の中で `label` は重ならない（全角・半角の違いだけのものも重ならない）。1人10件まで
+- `id` は名簿全体で重ならない（ほかの患者の計画と同じ `id` はない）。中身の分からない番号（名簿seed では `cp01`〜`cp08`）なので、画面は `id` の中身を読まず、表示にはいつも `label` を使う
+- 値は起動時に名簿seed（`backend/seed/patients.json`）から読んだもの。画面からは変えられない。デモは架空の計画だけ。Firestore には書かない（4章）
 
 **患者の情報はアプリで持ち続けない方針**：名簿の持ち主は電子カルテで、本番では電子カルテから読む（読み方は未決）。今のデモは架空の名簿を起動時に入れているだけ。
 
@@ -66,8 +75,11 @@ sequenceDiagram
 // 入力
 {"assigned_to": "n04", "reported_by": "n02"}
 // 出力
-{"mode": "mock", "patient": {"id": "p305", "...": "...", "assigned_to": "n04"}, "tasks_moved": ["t_demo2", "t_demo3"]}
+{"mode": "mock", "patient": {"id": "p305", "...": "...", "assigned_to": "n04", "care_plans": [{"id": "cp04", "label": "#急性疼痛"}, {"id": "cp05", "label": "#活動耐性低下"}]}, "tasks_moved": ["t_demo2", "t_demo3"]}
 ```
+
+- 出力の `patient` に `care_plans` が入る。値と並びは変える前と同じ（受け持ちを変えても看護計画は変わらない）
+- 入力に `care_plans` を入れても捨てる（エラーにしない）。看護計画は変わらない
 
 - 担当を人が変えていない（`assigned_set_by` が `rule`）未完了・期限内のタスクも、新しい受け持ちに移す（`tasks_moved`）。移したタスクの `assigned_set_by` は `rule` のまま。看護師が回した・引き取ったタスクと、済みのタスクは動かさない
 - `assigned_to` が看護師の一覧にない id なら `422`（`unknown_nurse`）、名簿にない患者なら `404`。担当を外す（`null`）ことはできない
@@ -101,7 +113,8 @@ sequenceDiagram
 ```json
 {
   "mode": "mock",
-  "patient": {"id": "p302", "room": "302", "bed": "A", "name": "田中", "kana": "たなか", "full_name": "田中 一郎", "full_kana": "たなか いちろう"},
+  "patient": {"id": "p302", "room": "302", "bed": "A", "name": "田中", "kana": "たなか", "full_name": "田中 一郎", "full_kana": "たなか いちろう",
+              "care_plans": [{"id": "cp01", "label": "#急性疼痛"}, {"id": "cp02", "label": "#感染リスク状態"}]},
   "patient_match": {"room": "一致", "name": "一致", "others": [], "level": "ok", "reasons": []},
   "input": "audio",
   "utterances": [
@@ -110,8 +123,8 @@ sequenceDiagram
   "draft": {
     "vitals": [{"item": "体温", "value": "36.8", "evidence": ["u7"], "source": "conversation"}],
     "soap": {
-      "S": [{"text": "夜間に創部痛あり…", "evidence": ["u9", "u11"]}],
-      "O": [{"text": "創部に発赤・腫脹なし。", "evidence": ["u12"]}],
+      "S": [{"text": "夜間に創部痛あり…", "evidence": ["u9", "u11"], "added_by": "ai", "plan_id": null}],
+      "O": [{"text": "創部に発赤・腫脹なし。", "evidence": ["u12"], "added_by": "ai", "plan_id": null}],
       "A": "",
       "P": ""
     },
@@ -137,7 +150,9 @@ sequenceDiagram
 | `patient_match.reasons` | `level` が `ok` でない理由（画面にそのまま出せる日本語の文の並び） |
 | `utterances` | 会話の全文。`speaker` は `nurse` / `patient` / `unknown`。テキスト入力では `start`・`end` は `null` |
 | `draft.vitals[].source` | `conversation`（会話から）／`manual`（看護師が手で入れた） |
+| `patient.care_plans` | 選んだ患者の看護計画（名簿API と同じ値・同じ並び）。**確認画面の看護計画の選択肢はここから作る** |
 | `draft.soap.S` / `O` | AI の下書き。各文に根拠の発言番号 |
+| `draft.soap.S` / `O` の `plan_id` | 文を付ける看護計画の `id`。`null` は「計画外」。下書きでは**すべての文が `null`**（mock でも live でも、音声でもテキストでも、AI は看護計画を付けない、A-14）。看護師が確認画面で選ぶ。S・O の文にだけ付き、バイタル・依頼・手で入力が必要なもの・医師への確認には付かない |
 | `draft.soap.A` / `P` | 常に空。看護師が書く |
 | `draft.requests[].urgency` | `said_urgent`（患者が急ぎと言った）／`timed`（時間指定あり）／`none`。**AI ではなくコードが `cue` から決める**。画面の3段に対応 |
 | `draft.requests[].cue` | `{"kind": "時間指定", "text": "昼食前", "evidence": [...]}` か `null` |
@@ -178,6 +193,8 @@ sequenceDiagram
 
 - `entail: true` なら、直した文に二段目の確認もかけ直す（Gemini を1回呼ぶ）。`false` ならコードの照合だけで、`entail_seals` は空（画面は前に受け取った分を使い続ける）
 - `source: "manual"` のバイタルは会話との照合をしない（根拠は「看護師の手入力」）
+- 入力の S・O の文に `plan_id`（看護計画の `id` か `null`）を入れてよい（例 `{"text": "…", "evidence": ["u9"], "added_by": "ai", "plan_id": "cp01"}`）。確かめるのは形（`null` か、英数字・`_`・`-` の1〜40字）だけで、違えば `422`（`invalid_request`）。選んだ患者の計画にあるかは確かめない（照合API は患者を受け取らない）。欄がない文は `null` と同じに扱う
+- 照合の結果（`checks`・`missing`・`entail_seals`）は `plan_id` で変わらない。**看護計画を選び直しただけでは、照合API を呼ばない**（Gemini の呼び出しを増やさないため）
 
 ### POST `/api/records` 確定する
 
@@ -211,7 +228,56 @@ sequenceDiagram
 - 看護師が足した要素（`added_by: "nurse"`）は照合で止まらず、記録にも `added_by: "nurse"` のまま残る（`kept_after_check` の「AI が補った文を看護師が認めた」とは別）。その依頼のタスクは `urgency_set_by: "nurse"`。根拠に選んだ発言は `evidence_utterances` とタスクの `patient_words` に入る。確定のログに足した数（`nurse_added`）と、AI の要素に戻した数（`relabelled_as_ai`）を出す
 - `level: stop` の `checks` が残っていて、`decisions` で残す／消すが決まっていないものがあれば `409`（`undecided_checks`）
 - `patient_match.level` が `ok` でない（`confirm` か `stop`）ときは、`patient_confirmed: true` が要る。なければ `409`（`patient_not_confirmed`）
-- `chart_text` は「患者・日時 → バイタル（T・BP・P・R・SpO2、血糖はあれば最後）→ S) → O) → A) → P)」の順（R-01）。手で入力が必要なもの・看護師が残した根拠のない文の印は出さない（A-06）
+- S・O の各文の `plan_id` は、`null` か、**選んだ患者の `care_plans` にある `id`** を入れる。文は `soap.S`・`soap.O` の同じ番号のまま送る（並べ替えない、別の配列に移さない）。欄がない文は `null` として扱い、記録にも `null` で残す
+- サーバーは、S・O の**すべての文**（看護師が足した文、`decisions` で消すと決めた文を含む）の `plan_id` を確かめる。形が違えば `422`（`invalid_request`）。選んだ患者の計画にない `id`（ほかの患者の計画の `id`、どの患者にもない `id`、計画のない患者に付けた `id`）が1つでもあれば `422`（`unknown_care_plan`）で、記録もタスクも保存せず、Gemini も呼ばない。同じ `confirm_id` のまま、選び直して送り直してよい
+- この確かめは、患者の確認（`409` の `patient_not_confirmed`）と二段目の呼び直しより先。両方に当たる下書きは `422` が返る
+- `unknown_care_plan` の `message` には、当たった文の場所が入る（例 `この患者さんの看護計画にない計画が付いた文があります（S 2文目、O 1文目）。看護計画を選び直してください`）。番号は送った `draft.soap.S`・`draft.soap.O` の番号（0 から数えた番号 + 1）で、S の文を先、O の文を後に、番号の順。6件以上なら先頭の5つと「ほか n 件」。看護計画の `label` と送った値は入らない
+- 看護計画を選んでいなくても（全部 `null` でも）、今のとおり確定できる。止める条件は今と同じ（`patient_not_confirmed`・`undecided_checks` の `409` など）
+- 下書きAPI か照合API（`entail: true`）が最後に返した下書きから `plan_id` だけを変えた確定では、二段目を呼び直さない。文を直した場合は、今のとおり確定のときに二段目を1回呼び直す
+- `chart_text` は「患者・日時 → バイタル（T・BP・P・R・SpO2、血糖はあれば最後）→ 看護計画ごとの S) → O)（文の付いた看護計画を `care_plans` の並びで）→ 計画外の S) → O) → A) → P)」の順（R-01）。手で入力が必要なもの・看護師が残した根拠のない文の印は出さない（A-06）。どれかの文に `plan_id` が付いているときの形：
+
+```text
+【{部屋}号室{ベッド} {氏名}様】{YYYY-MM-DD HH:MM}
+{バイタルの行（今のまま。なければ出さない）}
+{看護計画の label}
+S) {その計画の S の文をつなげたもの}
+O) {その計画の O の文をつなげたもの}
+… （文の付いた看護計画を care_plans の並びで）
+計画外
+S) {計画外の S の文}
+O) {計画外の O の文}
+A) {A}
+P) {P}
+```
+
+- 文が1つも付いていない看護計画の欄は、見出しの行も出さない。計画外の文がなければ「計画外」の行も出さない
+- 欄の中で S の文がなければ `S) ` の行を、O の文がなければ `O) ` の行を出さない
+- `A) ` と `P) ` の行は必ず1つずつ、最後に出す（看護計画ごとの A・P はない）
+- 文のつなぎ方（前後の空白を除く、区切りの文字を入れない、「。」などで終わらない文に「。」を足す）は今のまま
+- どの文にも `plan_id` が付いていないとき（`plan_id` を送らない今の画面を含む）は、今の形と1字も違わない（302号室・場面1）：
+
+```text
+【302号室A 田中 一郎様】2026-11-08 09:15
+T 36.8℃ BP 132/78 P 76
+S) 夜間に創部痛あり、あまり眠れなかったとの訴え。現在の痛みは4/10、夜間はそれ以上。
+O) 創部に発赤・腫脹なし。
+A) 
+P) 
+```
+
+- 看護計画の付いた例（305号室。`#急性疼痛` の文が1つ、計画外の文が2つ。O の文はない）：
+
+```text
+【305号室A 佐藤 和夫様】2026-11-19 10:00
+T 37.2℃ BP 132/84 P 88
+#急性疼痛
+S) 起き上がるときに術創がズキッとする。痛みは10段階で4。
+計画外
+S) 夜中に2回トイレで起き、あまり眠れなかった。朝食は半分で、食欲がない。
+A) 
+P) 
+```
+
 - 記録のデータには、止まったのに「残す」を選んだ要素（`kept_after_check`、A-06）と、患者の照合を看護師が確かめたこと（`patient_check`、S-04）を残す
 - `decisions[].action` は `keep`（根拠なしでも残す）か `delete`
 - `timing` は計測用。Cloud Logging に出すだけで Firestore には入れない。受けるのは4項目だけ（他の項目は捨てる）で、値は ISO 8601 の時刻（形が違えば `422`）
@@ -251,6 +317,7 @@ sequenceDiagram
   "record": {
     "record_id": "r_p302_c_7f3a9e",
     "patient_id": "p302", "room": "302", "name": "田中",
+    "revision": 0, "care_plans": [], "amended_paths": [],
     "vitals": [...], "soap": {"S": [...], "O": [...], "A": "", "P": ""},
     "requests": [...], "manual_needed": [...], "doctor_questions": [...],
     "evidence_utterances": [{"id": "u9", "speaker": "patient", "text": "…"}],
@@ -265,8 +332,35 @@ sequenceDiagram
 
 - **会話の全文は返せない（保存していない、P-02）**。返すのは、確定した記録に残った要素の根拠になった発言（`evidence_utterances`）だけ。画面の「会話記録」はこれを出す
 - `chart_text` は保存した記録から作り直したもの（確定のときの `chart_text` と同じ形、R-01）
+- S・O の各文に `plan_id` が入る（例 `{"text": "飲水は少しはできているとの発言。", "evidence": ["u8"], "added_by": "ai", "plan_id": "cp06"}`）。確定か編集で選んだ計画を返す。看護計画を足す前に確定した記録の文は `null`
+- 確定済みの各依頼（`requests[]`）に、対応するタスクの `task_id`（例 `t_p302_c_7f3a9e_0`）が入る。確定時にサーバーが作ったタスクの `id` と同じ。下書きや確定APIの入力では受け取らない。追加前に保存した記録は `null` を返す。
+- 記録には看護計画の `label` を残していない。`chart_text` は、起動時の名簿の `care_plans` から見出しを付けて作り直す。確定後に名簿と記録内容が変わっていなければ、確定API が返した `chart_text` と1字も違わない
+- 名簿の今の看護計画にない `plan_id` の文（名簿seed を変えて起動し直した場合など）は、エラーにせず「計画外」の欄に出す
 - `record_id` の形は `r_` で始まる英数字・`_`・`-`（違えば `422`）。ない・期限切れなら `404`（`record_not_found`）
 - 合言葉（`X-Passcode`）が要るのは、ほかの API と同じ
+
+### PATCH `/api/records/{record_id}` 確定済みの記録を手動で編集する
+
+閲覧できる利用者が、保存前に画面で確認した訂正を同じ記録に保存する。応答は記録詳細の GET と同じ。
+
+```json
+{
+  "revision": 0,
+  "changes": {
+    "soap": {
+      "S": [{"index": 0, "text": "後から看護師が確認した内容", "plan_id": null}],
+      "A": "看護師が入力した内容"
+    }
+  }
+}
+```
+
+- `revision` は詳細で受け取った版番号。保存かタスクからの反映で記録が変わると版が進む。版のない旧記録は `0`。版が違えば `409 record_changed`、期限切れ・不存在は `404 record_not_found`。
+- 変更する欄だけを送る。対象は `vitals`（`item`・`value`）、`soap`（`S`・`O` の `text`・`plan_id` と `A`・`P` の本文）、`requests`（`text`・`urgency`・`category`・`role`）、`manual_needed`・`doctor_questions`（`text`）。配列を送る欄には変更後の全行を送る。既存行は保存済みの位置 `index`（0始まり）、依頼は `task_id` で指定する。新規行ではそれらを省略するか `null` にする。配列から外した行は削除する。
+- 患者や最初の記録日時・期限は変更できない。新しく指定した看護計画はその患者の名簿上の計画だけ。看護計画の選択肢は詳細の `care_plans` で返す。
+- 手動で直した文と測定値は元の会話と照合しない。変更した欄から古い根拠や「確認して残した」印を外し、項目の位置を `amended_paths` に入れる。変更されていない項目に使われている発言だけを引き続き保存する。
+- 依頼欄の追加・変更・削除は対応するタスクにも反映する。既存タスクの担当と完了状態は保持する。依頼とタスクの対応がない旧記録は依頼以外を編集できる。記録とタスクは同じトランザクションで更新する。
+- 初回確定の再送は、編集済みの記録やタスクから反映された変更を上書きしない。
 
 ### GET `/api/tasks?status=open` タスク一覧
 
@@ -327,6 +421,9 @@ AI が拾わなかった依頼などを、記録なしでタスクにする（A-
 
 出力は `{"mode": "...", "task": {...}}`。`task` は `GET /api/tasks` の1件と同じ形（`patient_words` も入る）。
 
+- `urgency`・`category`・`role` を変更した場合、期限内の元の記録に同じ `task_id` の依頼が1件あれば、その依頼にも同じ値を保存する。Firestore ではタスクと記録を同じトランザクションで更新する。記録詳細を開き直すと変更後の値を表示する。
+- 完了状態や担当者はタスク側だけで管理する。記録のないタスクや `task_id` のない旧記録の場合は、タスクだけ更新する。
+
 ```json
 {"status": "done"}
 {"urgency": "said_urgent"}   // 看護師が段を変えた → urgency_set_by が "nurse" になる
@@ -344,10 +441,11 @@ AI が拾わなかった依頼などを、記録なしでタスクにする（A-
 
 | コレクション | 1件の中身 | 備考 |
 |---|---|---|
-| `patients/{id}` | `room`, `bed`, `name`, `kana`, `full_name`, `full_kana`, `ward`, `assigned_to` | 病棟の患者一覧（S-08）。デモは架空の名簿で、起動時に `backend/seed/patients.json` から入れる。`assigned_to` は基本の受け持ちの看護師。起動時に seed から入れるが、画面で変えた受け持ち（`null` でない値）は残す（再起動で seed に戻さない） |
-| `records/{id}` | `patient_id`, `room`, `name`, `full_name`, `vitals[]`, `soap{S[],O[],A,P}`, `requests[]`, `manual_needed[]`, `doctor_questions[]`, `evidence_utterances[]`, `decisions[]`, `kept_after_check[]`, `patient_check{level,confirmed_by_nurse,note}`, `created_at`, `expires_at` | **音声と、会話の文の全体は入れない**。`evidence_utterances` は確定した記録に残った要素の根拠になった発言だけ（`[{"id": "u9", "speaker": "patient", "text": "…"}]`。消した要素の根拠だけに使われた発言・雑談は入れない、P-02）。`kept_after_check` は `[{"path": "soap.S[1]", "codes": ["entail_not_supported"], "note": "看護師が確認して残した"}]`（場所は消した分を詰めた後の番号）。`patient_check.note` は赤なら「照合で食い違いあり→看護師が確認」 |
+| `patients/{id}` | `room`, `bed`, `name`, `kana`, `full_name`, `full_kana`, `ward`, `assigned_to` | 病棟の患者一覧（S-08）。デモは架空の名簿で、起動時に `backend/seed/patients.json` から入れる。`assigned_to` は基本の受け持ちの看護師。起動時に seed から入れるが、画面で変えた受け持ち（`null` でない値）は残す（再起動で seed に戻さない）。看護計画（`care_plans`）は書かない（名簿seed から起動時に読むだけ。Firestore に欄があっても読んで使わない） |
+| `records/{id}` | `patient_id`, `room`, `name`, `full_name`, `vitals[]`, `soap{S[],O[],A,P}`, `requests[]`, `manual_needed[]`, `doctor_questions[]`, `evidence_utterances[]`, `decisions[]`, `kept_after_check[]`, `patient_check{level,confirmed_by_nurse,note}`, `created_at`, `expires_at`, `revision`, `amended_paths[]` | **音声と、会話の文の全体は入れない**。`evidence_utterances` は確定した記録に残った要素の根拠になった発言だけ（`[{"id": "u9", "speaker": "patient", "text": "…"}]`。消した要素の根拠だけに使われた発言・雑談は入れない、P-02）。`kept_after_check` は `[{"path": "soap.S[1]", "codes": ["entail_not_supported"], "note": "看護師が確認して残した"}]`（場所は消した分を詰めた後の番号）。`patient_check.note` は赤なら「照合で食い違いあり→看護師が確認」。`soap.S[]`・`soap.O[]` の各要素に `plan_id`（看護計画の `id` か `null`）が入る。看護計画の `label` は入れない |
 | `tasks/{id}` | `patient_id`, `room`, `name`, `full_name`, `record_id`, `text`, `patient_words[]`, `urgency`, `urgency_set_by`, `category`, `role`, `category_set_by`, `role_set_by`, `cue{kind,text}`, `status`, `assigned_to`, `assigned_set_by`, `created_at`, `done_at`, `expires_at` | `assigned_to` は担当の看護師、`assigned_set_by` は `rule`／`nurse`（S-08）。看護師の一覧は Firestore に入れない（seed から読む） |
 
+- `records/{id}` の各 `requests[]` に対応する `tasks/{id}` の文書IDを `task_id` として残す。タスク側の `record_id` で元の記録を、記録側の `task_id` でどの依頼から作ったかを特定できる。旧記録の移し替えは行わない。
 - `expires_at` は作った日の翌日0時。Firestore の **TTL（期限切れの自動削除）**で消す。デモでも患者名入りのデータを残し続けない
 - 読み書きは Cloud Run のサービスアカウントだけ。画面からの直接の読み書きはルールで全部拒否する
 
@@ -361,6 +459,7 @@ AI が拾わなかった依頼などを、記録なしでタスクにする（A-
 | `GET /api/nurses` | `backend/seed/nurses.json` を返す（live も同じ） |
 | `PATCH /api/patients/{id}` | メモリの名簿の受け持ちを変える（再起動で seed に戻る） |
 | `POST /api/drafts` | 選んだ患者に応じて `backend/mock/draft_*.json` を返す（302→場面1、305→場面2、308→場面3、310→場面4、312→場面5、ほか→場面1）。患者の照合だけは選んだ患者でやり直す |
+| `POST /api/drafts` の看護計画 | 見本の S・O の文はすべて `plan_id: null`。`patient.care_plans` は選んだ患者の値（名簿seed のとおり） |
 | `POST /api/verify` | コードの照合は本物と同じに動く（Gemini は呼ばない）。`entail: true` は見本の判定を返し、見本にない文（直した文）は `entail_unclear` |
 | `POST /api/records`・タスク | メモリに保存（再起動で消える）。タスクには3段の見本が最初から入っている（`backend/mock/tasks.json`） |
 | `GET /api/records`・`GET /api/records/{id}` | メモリに保存した記録を返す（再起動で消える）。見本の記録は最初は入っていないので、確定してから見る |
@@ -399,3 +498,7 @@ AI が拾わなかった依頼などを、記録なしでタスクにする（A-
 | 11/9 | `GET /api/nurses`（架空の看護師の一覧）を足した。名簿の `assigned_to` に基本の受け持ちを入れた。タスクの `assigned_to` を作ったときに患者の受け持ちから写し、`assigned_set_by`（`rule`／`nurse`）を足した。`PATCH /api/tasks/{id}` で `assigned_to` を、`GET /api/tasks` で `assigned_to=` の絞り込みを受ける | 現場の声（その日の担当は変わる、担当外の依頼は担当に頼むか自分でやる）に、ログインなしで応えるため（S-08）。足すだけで、`assigned_to` を送らない今の画面はそのまま動く。誰が変えたかは残せない |
 | 11/9 | `PATCH /api/patients/{id}`（受け持ちを変える）を足した。変えると rule の未完了のタスクも移す（`tasks_moved`）。`GET /api/patients` は保存先の今の受け持ちを返す。起動時に名簿を入れ直しても、画面で変えた受け持ちは残す | その日の受け持ちの入れ替えに合わせるため（S-08）。患者の情報はアプリで持ち続けない方針も書いた |
 | 11/9 | `PATCH /api/tasks/{id}`・`PATCH /api/patients/{id}`・`POST /api/records` に任意の `reported_by`（画面で選んだ「自分」）を足し、タスク・名簿・記録に `assigned_reported_by`・`confirmed_reported_by` として残す。担当・受け持ちの変更を操作記録に出す | ログインなしの落としどころ：誰がやったと言っているかを、自己申告と明示して残す（S-08） |
+| 11/19 | 名簿・下書き・受け持ちの応答の患者に care_plans（看護計画）を、S・O の文に plan_id を足した。確定で選んだ患者の計画にない plan_id は 422（unknown_care_plan）。chart_text を看護計画ごとにまとめる（計画がなければ今の形と1字も違わない）。看護計画は Firestore に書かない | 看護師の試用の感想「記録は看護計画に対して書く」を受けて（.kiro/specs/care-plan-soap/）。今の画面は plan_id を送らなくてもそのまま動く |
+| 11/20 | 確定した記録の各依頼に対応する `task_id` を保存し、記録詳細APIで返す。旧記録は `null` | 依頼の並びが変わっても、記録のどの依頼とタスクが対応するかを追うため |
+| 11/20 | タスク更新時、緊急度・分類・職種を元の記録のひも付いた依頼にも保存し、記録詳細に表示する | タスク一覧で変更した値と看護記録の依頼欄が食い違わないようにするため |
+| 11/20 | 確定済み記録の手動編集（PATCH）を追加し、記録とタスクを同時に更新する。詳細に版番号、手動訂正の位置、看護計画の選択肢を追加 | 看護師が後から得た情報で記録を訂正できるようにするため |

@@ -15,6 +15,7 @@ from app.errors import ApiError
 from app.models.api import Patient
 from app.models.draft import Draft
 from app.models.limits import ID_PATTERN
+from app.models.record_amend import RecordAmend
 from app.models.record_views import (
     PREVIEW_CHARS,
     RecordDetail,
@@ -25,6 +26,8 @@ from app.models.record_views import (
 from app.routes.deps import services, settings
 from app.services.chart import chart_text
 from app.services.clock import iso, now_jst
+from app.services.record_amend import prepare_amendment
+from app.services.safe_log import log_event
 from app.store.base import Document
 
 router = APIRouter()
@@ -68,12 +71,14 @@ def _patient_of(svc: Services, doc: Document) -> Patient:
 def _detail(svc: Services, doc: Document) -> RecordDetail:
     draft = Draft.model_validate(doc)
     created_at: datetime = doc["created_at"]
+    patient = _patient_of(svc, doc)
     return RecordDetail.model_validate(
         {
             **doc,
             "record_id": doc["id"],
             "created_at": iso(created_at),
-            "chart_text": chart_text(_patient_of(svc, doc), draft, created_at),
+            "chart_text": chart_text(patient, draft, created_at),
+            "care_plans": patient.care_plans,
         }
     )
 
@@ -98,6 +103,33 @@ def get_record(
 ) -> RecordDetailResponse:
     """保存した記録の全体と、作り直したカルテ用の文。会話の全文は返さない（保存していない）。"""
     doc = svc.store.get_record(record_id, now_jst())
+    return _detail_response(svc, cfg, doc)
+
+
+@router.patch("/api/records/{record_id}")
+def amend_record(
+    record_id: Annotated[str, Path(pattern=RECORD_ID_PATTERN)],
+    body: RecordAmend,
+    svc: Services = Depends(services),
+    cfg: Settings = Depends(settings),
+) -> RecordDetailResponse:
+    """看護師が訂正した内容を、元の記録と対応するタスクに保存する。"""
+    updated = svc.store.amend_record(
+        record_id,
+        lambda record: prepare_amendment(record, body, _patient_of(svc, record), now_jst()),
+    )
+    response = _detail_response(svc, cfg, updated)
+    if response.record.revision != body.revision:
+        log_event(
+            "record_amended",
+            amended_at=iso(now_jst()),
+            edited_items=len(response.record.amended_paths),
+            requests=len(response.record.requests),
+        )
+    return response
+
+
+def _detail_response(svc: Services, cfg: Settings, doc: Document | None) -> RecordDetailResponse:
     if doc is None:
         raise ApiError(
             404, "record_not_found", "記録が見つかりません（期限切れで消えた可能性があります）"

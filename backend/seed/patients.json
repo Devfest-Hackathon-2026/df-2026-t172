@@ -8,7 +8,17 @@
     "full_name": "田中 一郎",
     "full_kana": "たなか いちろう",
     "ward": "東3病棟",
-    "assigned_to": "n01"
+    "assigned_to": "n01",
+    "care_plans": [
+      {
+        "id": "cp01",
+        "label": "#急性疼痛"
+      },
+      {
+        "id": "cp02",
+        "label": "#感染リスク状態"
+      }
+    ]
   },
   {
     "id": "p303",
@@ -19,7 +29,13 @@
     "full_name": "中田 花子",
     "full_kana": "なかた はなこ",
     "ward": "東3病棟",
-    "assigned_to": "n01"
+    "assigned_to": "n01",
+    "care_plans": [
+      {
+        "id": "cp03",
+        "label": "#急性疼痛"
+      }
+    ]
   },
   {
     "id": "p305",
@@ -30,7 +46,17 @@
     "full_name": "佐藤 和夫",
     "full_kana": "さとう かずお",
     "ward": "東3病棟",
-    "assigned_to": "n02"
+    "assigned_to": "n02",
+    "care_plans": [
+      {
+        "id": "cp04",
+        "label": "#急性疼痛"
+      },
+      {
+        "id": "cp05",
+        "label": "#活動耐性低下"
+      }
+    ]
   },
   {
     "id": "p308",
@@ -41,7 +67,13 @@
     "full_name": "鈴原 キヨ",
     "full_kana": "すずはら きよ",
     "ward": "東3病棟",
-    "assigned_to": "n02"
+    "assigned_to": "n02",
+    "care_plans": [
+      {
+        "id": "cp06",
+        "label": "#体液量不足リスク状態"
+      }
+    ]
   },
   {
     "id": "p310",
@@ -52,7 +84,13 @@
     "full_name": "小川 健一",
     "full_kana": "おがわ けんいち",
     "ward": "東3病棟",
-    "assigned_to": "n03"
+    "assigned_to": "n03",
+    "care_plans": [
+      {
+        "id": "cp07",
+        "label": "#退院支援"
+      }
+    ]
   },
   {
     "id": "p312",
@@ -63,6 +101,12 @@
     "full_name": "小林 正雄",
     "full_kana": "こばやし まさお",
     "ward": "東3病棟",
-    "assigned_to": "n03"
+    "assigned_to": "n03",
+    "care_plans": [
+      {
+        "id": "cp08",
+        "label": "#転倒転落リスク状態"
+      }
+    ]
   }
 ]

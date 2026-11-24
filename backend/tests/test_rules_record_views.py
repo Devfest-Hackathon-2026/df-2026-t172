@@ -49,6 +49,106 @@ def test_P02_record_detail_returns_only_evidence_utterances(app_and_records: tup
     assert record["patient_check"]["level"] == "ok"
 
 
+@pytest.mark.parametrize("use_firestore", [False, True], ids=["memory", "firestore"])
+def test_A01_saved_requests_reference_their_created_tasks(use_firestore: bool) -> None:
+    """確定した依頼とタスクは、保存した行の順が変わっても対応する。"""
+    services = make_services()
+    db = FakeFirestore() if use_firestore else None
+    if db is not None:
+        services.store = FirestoreStore(db)
+        services.store.seed_patients(services.roster)
+    client = TestClient(create_app(make_settings("mock"), services))
+    _, confirmed = _confirm(client, "p305")
+    record_id = confirmed["record_id"]
+    task_ids = confirmed["tasks_created"]
+    assert len(task_ids) == 2
+
+    saved = db.data["records", record_id] if db is not None else services.store._records[record_id]
+    assert [request["task_id"] for request in saved["requests"]] == task_ids
+    tasks = client.get("/api/tasks", params={"status": "all"}, headers=HEADERS).json()["tasks"]
+    linked = {t["id"]: t["text"] for t in tasks if t["record_id"] == record_id}
+    assert linked == {r["task_id"]: r["text"] for r in saved["requests"]}
+
+    saved["requests"].reverse()
+    detail = client.get(f"/api/records/{record_id}", headers=HEADERS)
+    assert detail.status_code == 200
+    assert [r["task_id"] for r in detail.json()["record"]["requests"]] == task_ids[::-1]
+
+
+def test_A01_older_record_without_task_link_is_readable(app_and_records: tuple) -> None:
+    """ひも付けを保存する前の記録も閲覧できる。"""
+    client, records = app_and_records
+    _, confirmed = _confirm(client, "p302")
+    record_id = confirmed["record_id"]
+    for request in records[record_id]["requests"]:
+        request.pop("task_id", None)
+
+    detail = client.get(f"/api/records/{record_id}", headers=HEADERS)
+    assert detail.status_code == 200
+    assert [r["task_id"] for r in detail.json()["record"]["requests"]] == [None]
+    task_id = confirmed["tasks_created"][0]
+    patch = client.patch(f"/api/tasks/{task_id}", json={"category": "食事"}, headers=HEADERS)
+    assert patch.status_code == 200
+    assert client.get(f"/api/records/{record_id}", headers=HEADERS).json() == detail.json()
+
+
+@pytest.mark.parametrize("use_firestore", [False, True], ids=["memory", "firestore"])
+def test_A08_A13_task_changes_reach_the_matching_request_only(use_firestore: bool) -> None:
+    """緊急度とラベルは、順番が変わっても正しい記録の依頼にだけ反映する。"""
+    services = make_services()
+    db = FakeFirestore() if use_firestore else None
+    if db is not None:
+        services.store = FirestoreStore(db)
+        services.store.seed_patients(services.roster)
+    client = TestClient(create_app(make_settings("mock"), services))
+    _, confirmed = _confirm(client, "p305")
+    _, another = _confirm(client, "p305")
+    record_id = confirmed["record_id"]
+    task_id = confirmed["tasks_created"][0]
+    saved = db.data["records", record_id] if db is not None else services.store._records[record_id]
+    saved["requests"].reverse()
+    record_url = f"/api/records/{record_id}"
+    other_url = f"/api/records/{another['record_id']}"
+    before = client.get(record_url, headers=HEADERS).json()["record"]
+    other_before = client.get(other_url, headers=HEADERS).json()
+    assert before["requests"][1]["task_id"] == task_id
+
+    changes = {"urgency": "said_urgent", "category": "清潔", "role": "看護師"}
+    patch = client.patch(
+        f"/api/tasks/{task_id}", json={**changes, "status": "done"}, headers=HEADERS
+    )
+    assert patch.status_code == 200, patch.text
+    assert patch.json()["task"]["status"] == "done"
+    assert {key: patch.json()["task"][key] for key in changes} == changes
+    expected_requests = [before["requests"][0], {**before["requests"][1], **changes}]
+    assert client.get(record_url, headers=HEADERS).json()["record"] == {
+        **before,
+        "revision": before["revision"] + 1,
+        "requests": expected_requests,
+    }
+    assert client.get(other_url, headers=HEADERS).json() == other_before
+
+
+def test_A08_firestore_commit_failure_leaves_task_and_record_unchanged() -> None:
+    """Firestore の保存が失敗したとき、記録かタスクの片方だけが残らない。"""
+    services = make_services()
+    db = FakeFirestore()
+    services.store = FirestoreStore(db)
+    services.store.seed_patients(services.roster)
+    client = TestClient(create_app(make_settings("mock"), services), raise_server_exceptions=False)
+    _, confirmed = _confirm(client, "p302")
+    record_id = confirmed["record_id"]
+    task_id = confirmed["tasks_created"][0]
+    record_key, task_key = ("records", record_id), ("tasks", task_id)
+    record_before, task_before = dict(db.data[record_key]), dict(db.data[task_key])
+    db.fail_transaction = True
+
+    patch = client.patch(f"/api/tasks/{task_id}", json={"urgency": "said_urgent"}, headers=HEADERS)
+    assert patch.status_code == 500
+    assert db.data[record_key] == record_before
+    assert db.data[task_key] == task_before
+
+
 def test_P02_record_list_is_short_summaries_newest_first(app_and_records: tuple) -> None:
     """一覧は新しい順の短い要約。patient_id で絞れる。"""
     client, records = app_and_records

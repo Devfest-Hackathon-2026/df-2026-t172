@@ -1,42 +1,10 @@
-import { renderPatientCard } from "../components/patient-card.js?v=20261109-navy";
-import { renderVitalCard } from "../components/vital-card.js?v=20261109-vitals-summary";
+import { renderSoap } from "../components/review-soap.js?v=20261121-context-help";
+import { renderPatientCard } from "../components/patient-card.js?v=20261121-context-help";
+import { renderVitalCard } from "../components/vital-card.js?v=20261121-context-help";
 import { renderAlertCard } from "../components/alert-card.js";
 import { renderUtterance } from "../components/evidence-card.js";
 import { element, panel, reviewButton } from "../components/review-dom.js";
-import { addEntryButton, refreshCheckTarget, renderReviewEntry } from "../components/review-entry.js";
-
-function renderSoap(session) {
-  const section = panel("SOAP");
-  const labels = { S: "患者の訴え", O: "観察・測定", A: "アセスメント", P: "計画" };
-  for (const part of ["S", "O", "A", "P"]) {
-    const group = element("div", "soap-group");
-    const heading = element("div", "soap-heading");
-    const headingId = `soap-heading-${part}`;
-    const title = element("h3", "soap-title", `${part}　${labels[part]}`);
-    title.id = headingId;
-    heading.append(title);
-    group.append(heading);
-    if (["A", "P"].includes(part)) {
-      const textarea = element("textarea", "textarea");
-      textarea.value = session.draft.soap[part];
-      textarea.maxLength = 5000;
-      textarea.dataset.reviewField = "soap";
-      textarea.dataset.part = part;
-      textarea.dataset.focusKey = `soap-${part}`;
-      textarea.setAttribute("aria-labelledby", headingId);
-      group.append(textarea);
-    } else {
-      for (const [index, sentence] of session.draft.soap[part].entries()) {
-        const path = `soap.${part}[${index}]`;
-        group.append(renderReviewEntry(sentence, path, session, { part, index, label: `${part} ${index + 1}文目`,
-          evidenceKey: `soap-evidence-${part}-${index}`, className: "soap-sentence" }));
-      }
-    }
-    if (["S", "O"].includes(part)) group.append(addEntryButton(`soap.${part}`, "＋ 文を追加", session));
-    section.append(group);
-  }
-  return section;
-}
+import { addEntryButton, refreshCheckTarget, renderReviewEntry } from "../components/review-entry.js?v=20261121-context-help";
 
 function renderChecks(session) {
   const section = panel("検証結果");
@@ -177,6 +145,15 @@ export function refreshReviewStatus(root, session) {
     const vital = index === "" ? null : session.draft.vitals[Number(index)];
     field.dataset.checkPath = index === "" ? "" : `vitals[${index}]`;
     if (vital?.source === "manual") field.querySelector("[data-vital-evidence]")?.remove();
+  }
+  for (const button of root.querySelectorAll("[data-split-action]")) {
+    if (button.dataset.splitAction === "open") button.disabled = !session.canSplitSentence(button.dataset.splitPath);
+    if (button.dataset.splitAction === "undo") button.disabled = !session.canUndoSplit(button.dataset.splitPath);
+    if (button.dataset.splitAction === "commit") button.disabled ||= !session.canSplitSentence(button.dataset.splitPath);
+    if (button.dataset.splitAction === "cancel") button.disabled = locked;
+  }
+  for (const field of root.querySelectorAll('[data-review-field="care-plan"], [data-review-field="split-text"]')) {
+    field.disabled ||= session.status === "verifying";
   }
   for (const node of root.querySelectorAll("[data-check-path]")) refreshCheckTarget(node, session);
 

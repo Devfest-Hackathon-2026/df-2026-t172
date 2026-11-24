@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { afterEach, beforeEach, test } from "node:test";
-import { loadRecord, loadRecords, recordTime, savedTarget } from "../js/history.js";
+import { loadRecord, loadRecords, recordTime, savedTarget, updateRecord } from "../js/history.js";
 import { clearPatientData, getState, setHistoryState } from "../js/state.js";
 
 const originalFetch = globalThis.fetch;
@@ -84,6 +84,43 @@ test("record detail preserves server chart text and confirmation notes, retainin
   assert.deepEqual(Object.keys(record.evidence_utterances[0]), ["id", "speaker", "text"]);
 });
 
+test("record detail retains the latest task labels returned on its saved request", async () => {
+  const source = detail();
+  const changes = { urgency: "said_urgent", category: "清潔", role: "看護師" };
+  Object.assign(source.requests[0], changes);
+  globalThis.fetch = async () => Response.json({ mode: "mock", record: source });
+  const { requests: [request] } = await loadRecord(summary.record_id);
+  assert.deepEqual(
+    { urgency: request.urgency, category: request.category, role: request.role },
+    changes,
+  );
+});
+
+test("saved record amendment sends the read revision and retains the server detail for copying", async () => {
+  const record = {
+    ...detail(), revision: 2,
+    care_plans: [{ id: "cp_demo", label: "#架空の看護計画" }],
+  };
+  record.requests[0].task_id = "t_p302_example";
+  record.soap.S[0].plan_id = "cp_demo";
+  const changes = { soap: { A: "看護師が追記した内容" } };
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url.pathname, `/api/records/${record.record_id}`);
+    assert.equal(options.method, "PATCH");
+    assert.deepEqual(JSON.parse(options.body), { revision: 2, changes });
+    return Response.json({ mode: "mock", record: {
+      ...record, revision: 3, amended_paths: ["soap.A"],
+      soap: { ...record.soap, ...changes.soap }, chart_text: "A) 看護師が追記した内容",
+    } });
+  };
+  const saved = await updateRecord(record, changes);
+  assert.equal(saved.revision, 3);
+  assert.equal(saved.chart_text, "A) 看護師が追記した内容");
+  assert.equal(saved.soap.S[0].plan_id, "cp_demo");
+  assert.deepEqual(saved.amended_paths, ["soap.A"]);
+  assert.equal(saved.requests[0].task_id, "t_p302_example");
+});
+
 test("another record and malformed saved evidence cannot be presented as the requested detail", async () => {
   for (const record of [
     { ...detail(), record_id: "r_p303_other" },
@@ -142,4 +179,16 @@ test("authentication cleanup releases record lists, details and patient filters"
   assert.equal(history.record, null);
   assert.equal(history.recordId, null);
   assert.equal(history.patientId, "");
+});
+
+test("R03: 保存した計画IDを保持し、旧記録はnullとして読む", async () => {
+  for (const planId of ["cp01", null, undefined]) {
+    const data = detail();
+    if (planId === undefined) delete data.soap.S[0].plan_id;
+    else data.soap.S[0].plan_id = planId;
+    globalThis.fetch = async () => Response.json({ mode: "mock", record: data });
+    const loaded = await loadRecord(data.record_id);
+    assert.equal(loaded.soap.S[0].plan_id, planId ?? null);
+    assert.equal(loaded.chart_text, data.chart_text);
+  }
 });

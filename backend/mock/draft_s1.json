@@ -10,7 +10,17 @@
     "full_kana": "たなか いちろう",
     "ward": "東3病棟",
     "assigned_to": "n01",
-    "assigned_reported_by": null
+    "assigned_reported_by": null,
+    "care_plans": [
+      {
+        "id": "cp01",
+        "label": "#急性疼痛"
+      },
+      {
+        "id": "cp02",
+        "label": "#感染リスク状態"
+      }
+    ]
   },
   "patient_match": {
     "room": "一致",
@@ -183,7 +193,8 @@
             "u9",
             "u11"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         }
       ],
       "O": [
@@ -192,7 +203,8 @@
           "evidence": [
             "u12"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         }
       ],
       "A": "",

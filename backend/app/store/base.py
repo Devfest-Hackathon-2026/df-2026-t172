@@ -4,12 +4,39 @@
 API で返すときに文字列にする。**会話の文（発言の列）と音声は渡さない。**
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Protocol
 
+from app.errors import ApiError
 from app.models.api import Patient
 
 Document = dict[str, Any]
+
+
+@dataclass
+class RecordUpdate:
+    """保存済み記録への変更と、同時に適用するタスクの変更。"""
+
+    now: datetime
+    fields: Document = field(default_factory=dict)
+    linked_task_ids: set[str] = field(default_factory=set)
+    task_changes: dict[str, Document | None] = field(default_factory=dict)
+    new_tasks: list[Document] = field(default_factory=list)
+
+
+def ensure_linked_task(record: Document, task: Document | None, now: datetime) -> None:
+    """タスクが同じ記録と患者に属し、期限内であることを確かめる。"""
+    if (
+        task is None
+        or task.get("record_id") != record["id"]
+        or task["patient_id"] != record["patient_id"]
+        or task["expires_at"] <= now
+    ):
+        raise ApiError(
+            422, "unlinked_requests", "対応するタスクが見つからないため、依頼欄は変更できません"
+        )
 
 
 def is_rule_task_to_move(task: Document, now: datetime) -> bool:
@@ -24,6 +51,28 @@ def is_rule_task_to_move(task: Document, now: datetime) -> bool:
     )
 
 
+def request_fields_from_task(fields: Document) -> Document:
+    """タスクから記録の依頼に反映する共通項目だけを選ぶ。"""
+    return {key: fields[key] for key in ("urgency", "category", "role") if key in fields}
+
+
+def updated_linked_requests(
+    record: Document, task_id: str, changes: Document, now: datetime
+) -> list[Document] | None:
+    """期限内の記録で、明示的にひも付く依頼が1件なら変更後の一覧を返す。"""
+    if record["expires_at"] <= now:
+        return None
+    requests: list[Document] = record.get("requests", [])
+    matches = [i for i, request in enumerate(requests) if request.get("task_id") == task_id]
+    if len(matches) != 1:
+        return None
+    index = matches[0]
+    original = requests[index]
+    if all(original.get(key) == value for key, value in changes.items()):
+        return None
+    return [*requests[:index], {**original, **changes}, *requests[index + 1 :]]
+
+
 class Store(Protocol):
     """名簿・記録・タスクの読み書き。"""
 
@@ -35,11 +84,22 @@ class Store(Protocol):
         """名簿の1人。いなければ None。"""
         ...
 
-    def save_record(self, record_id: str, record: Document, tasks: list[Document]) -> None:
+    def save_record(
+        self, record_id: str, record: Document, tasks: list[Document]
+    ) -> Document | None:
         """確定した記録と、その依頼から作ったタスクをまとめて保存する。
 
         同じ record_id がすでにあれば上書きし、その記録から作った前のタスクは消す
-        （二重の確定でタスクが重ならないように）。
+        （二重の確定でタスクが重ならないように）。修正済みなら上書きせず、現在の記録を返す。
+        """
+        ...
+
+    def amend_record(
+        self, record_id: str, prepare: Callable[[Document], RecordUpdate]
+    ) -> Document | None:
+        """現在の記録を基に検証し、同じ処理で記録とタスクを更新する。
+
+        存在しなければ None。検証に失敗したときは何も書き込まない。
         """
         ...
 
@@ -84,5 +144,8 @@ class Store(Protocol):
         ...
 
     def update_task(self, task_id: str, fields: Document, now: datetime) -> Document | None:
-        """タスクを書き換えて、書き換えた後の1件を返す。ない・期限切れなら None。"""
+        """タスクと、ひも付いた依頼の共通項目をまとめて更新する。
+
+        更新後のタスクを返す。タスクがない場合や期限切れの場合は None。
+        """
         ...

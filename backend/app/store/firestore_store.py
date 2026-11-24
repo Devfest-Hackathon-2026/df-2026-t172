@@ -5,13 +5,30 @@
 TTL の対象にして、作った日の翌日0時以降に自動で消す。
 """
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
 from app.models.api import Patient
-from app.store.base import Document, is_rule_task_to_move
+from app.store.base import (
+    Document,
+    RecordUpdate,
+    ensure_linked_task,
+    is_rule_task_to_move,
+    request_fields_from_task,
+    updated_linked_requests,
+)
 
 PATIENTS, RECORDS, TASKS = "patients", "records", "tasks"
+# 看護計画は起動時の名簿からだけ使う。Firestore には書かず、読んでも使わない
+# （care-plan-soap の要件2の9。保存先に病状の情報を増やさない）
+_ROSTER_ONLY_FIELDS = {"care_plans"}
+
+
+def _stored_patient(patient_id: str, fields: dict[str, Any]) -> Patient:
+    """Firestore の名簿の1人。看護計画の欄が入っていても捨てる（型の条件もかけない）。"""
+    kept = {k: v for k, v in fields.items() if k not in _ROSTER_ONLY_FIELDS}
+    return Patient(id=patient_id, **kept)
 
 
 class FirestoreStore:
@@ -37,7 +54,7 @@ class FirestoreStore:
         saved = {doc.id: doc.to_dict() for doc in self._db.collection(PATIENTS).stream()}
         batch = self._db.batch()
         for p in patients:
-            fields = p.model_dump(exclude={"id"})
+            fields = p.model_dump(exclude={"id", *_ROSTER_ONLY_FIELDS})
             kept = saved.get(p.id, {})
             if kept.get("assigned_to") is not None:
                 fields["assigned_to"] = kept["assigned_to"]
@@ -48,26 +65,86 @@ class FirestoreStore:
     def list_patients(self) -> list[Patient]:
         """名簿の全員（部屋番号の順）。"""
         patients = [
-            Patient(id=doc.id, **doc.to_dict()) for doc in self._db.collection(PATIENTS).stream()
+            _stored_patient(doc.id, doc.to_dict()) for doc in self._db.collection(PATIENTS).stream()
         ]
         return sorted(patients, key=lambda p: (p.room, p.bed))
 
     def get_patient(self, patient_id: str) -> Patient | None:
         """名簿の1人。いなければ None。"""
         doc = self._db.collection(PATIENTS).document(patient_id).get()
-        return Patient(id=doc.id, **doc.to_dict()) if doc.exists else None
+        return _stored_patient(doc.id, doc.to_dict()) if doc.exists else None
 
-    def save_record(self, record_id: str, record: Document, tasks: list[Document]) -> None:
-        """記録とタスクを1回の書き込み（batch）で保存する（同じ記録の前のタスクは消す）。"""
-        old_tasks = self._db.collection(TASKS).where("record_id", "==", record_id).stream()
-        batch = self._db.batch()
-        for doc in old_tasks:
-            batch.delete(doc.reference)
-        batch.set(self._db.collection(RECORDS).document(record_id), record)
+    def save_record(
+        self, record_id: str, record: Document, tasks: list[Document]
+    ) -> Document | None:
+        """確定を一括保存する。修正済みかどうかも同じトランザクションで確認する。"""
+        from google.cloud.firestore import transactional
+
+        return transactional(self._save_record)(self._db.transaction(), record_id, record, tasks)
+
+    def _save_record(
+        self, transaction: Any, record_id: str, record: Document, tasks: list[Document]
+    ) -> Document | None:
+        ref = self._db.collection(RECORDS).document(record_id)
+        snapshot = ref.get(transaction=transaction)
+        task_collection = self._db.collection(TASKS)
+        if snapshot.exists:
+            current = snapshot.to_dict()
+            if current.get("revision", 0) > 0:
+                return {"id": record_id, **current}
+            old_tasks = task_collection.where("record_id", "==", record_id).stream(
+                transaction=transaction
+            )
+            new_ids = {task["id"] for task in tasks}
+            removed = [doc.id for doc in old_tasks if doc.id not in new_ids]
+            for task_id in removed:
+                transaction.delete(task_collection.document(task_id))
+        transaction.set(ref, record)
         for task in tasks:
             fields = {k: v for k, v in task.items() if k != "id"}
-            batch.set(self._db.collection(TASKS).document(task["id"]), fields)
-        batch.commit()
+            transaction.set(task_collection.document(task["id"]), fields)
+        return None
+
+    def amend_record(
+        self, record_id: str, prepare: Callable[[Document], RecordUpdate]
+    ) -> Document | None:
+        """記録とタスクを同じトランザクションで読み書きする。"""
+        from google.cloud.firestore import transactional
+
+        return transactional(self._amend_record)(self._db.transaction(), record_id, prepare)
+
+    def _amend_record(
+        self, transaction: Any, record_id: str, prepare: Callable[[Document], RecordUpdate]
+    ) -> Document | None:
+        ref = self._db.collection(RECORDS).document(record_id)
+        snapshot = ref.get(transaction=transaction)
+        if not snapshot.exists:
+            return None
+        record = {"id": record_id, **snapshot.to_dict()}
+        update = prepare(record)
+        tasks = self._db.collection(TASKS)
+        for task_id in sorted(update.linked_task_ids):
+            doc = tasks.document(task_id).get(transaction=transaction)
+            ensure_linked_task(record, doc.to_dict() if doc.exists else None, update.now)
+        if update.new_tasks:
+            patient_ref = self._db.collection(PATIENTS).document(record["patient_id"])
+            patient = patient_ref.get(transaction=transaction)
+            if patient.exists:
+                assignee = patient.to_dict().get("assigned_to")
+                for task in update.new_tasks:
+                    task["assigned_to"] = assignee
+        if update.fields:
+            transaction.update(ref, update.fields)
+        for task_id, fields in update.task_changes.items():
+            task_ref = tasks.document(task_id)
+            if fields is None:
+                transaction.delete(task_ref)
+            else:
+                transaction.update(task_ref, fields)
+        for task in update.new_tasks:
+            fields = {k: v for k, v in task.items() if k != "id"}
+            transaction.create(tasks.document(task["id"]), fields)
+        return {**record, **update.fields}
 
     def list_records(self, patient_id: str | None, now: datetime) -> list[Document]:
         """記録の一覧（期限切れは除く）。
@@ -98,14 +175,24 @@ class FirestoreStore:
             return None
         change = {"assigned_to": nurse_id, "assigned_reported_by": reported_by}
         ref.update(change)
-        return Patient(id=patient_id, **{**doc.to_dict(), **change})
+        return _stored_patient(patient_id, {**doc.to_dict(), **change})
 
     def move_rule_tasks(self, patient_id: str, nurse_id: str, now: datetime) -> list[str]:
         """受け持ちから写しただけの未完了のタスクを移す（1人分の1日の依頼なので数件）。"""
-        docs = self._db.collection(TASKS).where("patient_id", "==", patient_id).stream()
+        from google.cloud.firestore import transactional
+
+        return transactional(self._move_rule_tasks)(
+            self._db.transaction(), patient_id, nurse_id, now
+        )
+
+    def _move_rule_tasks(
+        self, transaction: Any, patient_id: str, nurse_id: str, now: datetime
+    ) -> list[str]:
+        tasks = self._db.collection(TASKS)
+        docs = tasks.where("patient_id", "==", patient_id).stream(transaction=transaction)
         moved = [doc.id for doc in docs if is_rule_task_to_move(doc.to_dict(), now)]
         for task_id in moved:
-            self._db.collection(TASKS).document(task_id).update({"assigned_to": nurse_id})
+            transaction.update(tasks.document(task_id), {"assigned_to": nurse_id})
         return moved
 
     def add_task(self, task: Document) -> None:
@@ -126,10 +213,32 @@ class FirestoreStore:
         return [t for t in tasks if t["expires_at"] > now]
 
     def update_task(self, task_id: str, fields: Document, now: datetime) -> Document | None:
-        """タスクを書き換える。"""
+        """タスクを更新する。共通項目の変更は記録と同じトランザクションに入れる。"""
+        from google.cloud.firestore import transactional
+
+        return transactional(self._update_task)(self._db.transaction(), task_id, fields, now)
+
+    def _update_task(
+        self, transaction: Any, task_id: str, fields: Document, now: datetime
+    ) -> Document | None:
         ref = self._db.collection(TASKS).document(task_id)
-        doc = ref.get()
-        if not doc.exists or doc.to_dict()["expires_at"] <= now:
+        doc = ref.get(transaction=transaction)
+        task = doc.to_dict() if doc.exists else None
+        if task is None or task["expires_at"] <= now:
             return None
-        ref.update(fields)
-        return {"id": task_id, **doc.to_dict(), **fields}
+
+        changes = request_fields_from_task(fields)
+        record_id = task.get("record_id")
+        if changes and record_id:
+            record_ref = self._db.collection(RECORDS).document(record_id)
+            record_doc = record_ref.get(transaction=transaction)
+            if record_doc.exists:
+                record = record_doc.to_dict()
+                requests = updated_linked_requests(record, task_id, changes, now)
+                if requests is not None:
+                    transaction.update(
+                        record_ref,
+                        {"requests": requests, "revision": record.get("revision", 0) + 1},
+                    )
+        transaction.update(ref, fields)
+        return {"id": task_id, **task, **fields}

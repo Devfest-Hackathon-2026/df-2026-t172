@@ -1,7 +1,7 @@
-import { displayName } from "../patients.js";
-import { taskCategory, taskGroups } from "../tasks.js?v=20261110-assign";
-import { renderTaskAssignee } from "./task-assign.js?v=20261110-assign";
-import { createIcon } from "./icons.js?v=20261109-navy";
+import { displayName } from "../patients.js?v=20261121-context-help";
+import { taskCategory, taskGroups } from "../tasks.js?v=20261121-context-help";
+import { renderTaskAssignee } from "./task-assign.js?v=20261121-context-help";
+import { createIcon } from "./icons.js?v=20261121-context-help";
 
 export function renderTaskCard(task, { pending = false, error = "" } = {}) {
   const card = document.createElement("article");

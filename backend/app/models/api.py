@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.models.care_plan import CarePlans
 from app.models.draft import Check, CueKind, Draft, EntailSeal, FirstSpeaker, Urgency, Utterance
 from app.models.labels import DEFAULT_CATEGORY, DEFAULT_ROLE, Category, LabelSetBy, Role
 from app.models.limits import MAX_UTTERANCES, SafeId
@@ -31,6 +32,10 @@ class Patient(BaseModel):
     )
     assigned_reported_by: str | None = Field(
         default=None, description="受け持ちを最後に変えたと申告した看護師の id（自己申告）"
+    )
+    care_plans: CarePlans = Field(
+        default_factory=list,
+        description="患者の看護計画（名簿seed からだけ入る。画面では変えない）",
     )
 
     @property

@@ -1,5 +1,5 @@
-import { getAssigneeTable, getMyNurseId, getNurses, getTaskScope, nurseName } from "../assignment.js";
-import { displayName } from "../patients.js";
+import { getAssigneeTable, getMyNurseId, getNurses, getTaskScope, nurseName } from "../assignment.js?v=20261121-context-help";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element } from "./review-dom.js";
 
 /** タスクの箱に出す担当の名前（S-08）。看護師の一覧が読めなければ出しません。 */

@@ -7,9 +7,9 @@
     <meta name="color-scheme" content="light" />
     <title>NurseNote</title>
     <link rel="icon" type="image/png" href="./img/nursenote-logo.png" />
-    <link rel="stylesheet" href="./css/style.css?v=20261109-navy" />
-    <link rel="stylesheet" href="./css/components.css?v=20261110-ainote" />
-    <script type="module" src="./js/app.js?v=20261110-fix"></script>
+    <link rel="stylesheet" href="./css/style.css?v=20261121-context-help" />
+    <link rel="stylesheet" href="./css/components.css?v=20261121-context-help" />
+    <script type="module" src="./js/app.js?v=20261121-context-help"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -18,7 +18,10 @@
           <span class="brand-symbol" aria-hidden="true"><img src="./img/nursenote-logo.png" alt="" width="1254" height="1254" /></span>
           <span>NurseNote</span>
         </a>
-        <span class="mode-badge" id="mode-badge" role="status" aria-label="接続確認中">—</span>
+        <div class="header-actions">
+          <button type="button" class="text-button guide-trigger" id="guide-trigger" aria-haspopup="dialog" aria-controls="usage-guide" hidden><span aria-hidden="true">？</span> 使い方</button>
+          <span class="mode-badge" id="mode-badge" role="status" aria-label="接続確認中">—</span>
+        </div>
       </header>
 
       <main class="app-content" id="screen" tabindex="-1"></main>

@@ -1,5 +1,5 @@
 import { element } from "../components/review-dom.js";
-import { renderCopyFallback, renderRecordSummary } from "../components/record-summary.js";
+import { renderCopyFallback, renderRecordSummary } from "../components/record-summary.js?v=20261121-context-help";
 
 export function refreshExportDetails(root, record) {
   const container = root.querySelector("[data-export-details]");
@@ -37,6 +37,8 @@ export function renderExport(record) {
   const home = element("button", "secondary-button", "ホームへ");
   home.type = "button";
   home.dataset.exportAction = "home";
-  view.append(copy, status, home, renderCopyFallback(record.chart_text));
+  view.append(copy, status,
+    element("p", "export-edit-help", "保存した記録は「会話記録」から開き、「編集」で直せます。"),
+    home, renderCopyFallback(record.chart_text));
   return view;
 }

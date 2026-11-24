@@ -1,4 +1,5 @@
-import { ApiError, getPatients } from "./api.js";
+import { normalizeCarePlans } from "./care-plans.js?v=20261121-context-help";
+import { ApiError, getPatients } from "./api.js?v=20261121-context-help";
 
 const roomOrder = new Intl.Collator("ja", { numeric: true });
 
@@ -19,5 +20,5 @@ export async function loadPatients(options = {}) {
     || ["full_name", "full_kana"].some((key) => patient[key] !== undefined && typeof patient[key] !== "string"))) {
     throw new ApiError("患者一覧を読み取れませんでした。", { code: "invalid_response" });
   }
-  return sortPatients(patients);
+  return sortPatients(patients.map((patient) => ({ ...patient, care_plans: normalizeCarePlans(patient.care_plans) })));
 }

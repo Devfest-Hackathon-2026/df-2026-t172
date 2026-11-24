@@ -1,8 +1,8 @@
-import { createIcon } from "../components/icons.js";
-import { renderTaskCard } from "../components/task-card.js?v=20261110-assign";
-import { renderTaskScope } from "../components/task-assign.js?v=20261110-assign";
-import { getTaskScope, scopedTasks } from "../assignment.js";
-import { groupOpenTasks } from "../tasks.js?v=20261110-assign";
+import { createIcon } from "../components/icons.js?v=20261121-context-help";
+import { renderTaskCard } from "../components/task-card.js?v=20261121-context-help";
+import { renderTaskScope } from "../components/task-assign.js?v=20261121-context-help";
+import { getTaskScope, scopedTasks } from "../assignment.js?v=20261121-context-help";
+import { groupOpenTasks } from "../tasks.js?v=20261121-context-help";
 
 export function renderHome(state) {
   const view = document.createElement("div");

@@ -1,6 +1,6 @@
-import { displayName } from "../patients.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element } from "./review-dom.js";
-import { createIcon } from "./icons.js?v=20261109-navy";
+import { createIcon } from "./icons.js?v=20261121-context-help";
 
 export function renderPatientCard(session) {
   const { patient, patientMatch } = session;

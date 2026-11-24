@@ -1,6 +1,6 @@
-import { displayName } from "../patients.js";
+import { displayName } from "../patients.js?v=20261121-context-help";
 import { element, reviewButton } from "../components/review-dom.js";
-import { createIcon } from "../components/icons.js";
+import { createIcon } from "../components/icons.js?v=20261121-context-help";
 
 export function elapsedTime(seconds) {
   const value = Math.min(180, Math.max(0, Math.floor(seconds)));

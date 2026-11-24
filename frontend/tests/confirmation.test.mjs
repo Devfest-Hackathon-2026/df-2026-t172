@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { afterEach, beforeEach, test } from "node:test";
+import { recordConfirmationPreview } from "../js/components/record-confirmation-dialog.js";
 import { ReviewSession, isoJst } from "../js/records.js";
 import { clearPatientData, clearReview, getState, selectPatient, setConfirmedRecord, setExportState, setReview } from "../js/state.js";
 
@@ -26,6 +27,35 @@ afterEach(() => {
   clearPatientData();
   globalThis.fetch = originalFetch;
   delete globalThis.window;
+});
+
+test("the final preview omits removed content without preparing or sending a save", () => {
+  const data = structuredClone(fixture);
+  const knownPlan = { id: "cp01", label: "#急性疼痛" };
+  data.patient.care_plans = [knownPlan];
+  const retainedSentence = { text: "体を起こすと痛む。", evidence: [], plan_id: knownPlan.id };
+  data.draft.soap.S.push(retainedSentence);
+  data.draft.requests[0].cue = { kind: "時間指定", text: "昼食前", evidence: [] };
+  data.draft.requests[0].urgency = "timed";
+  data.draft.requests.push({ ...data.draft.requests[0], text: "削除する依頼" });
+  const deletedPaths = ["vitals[0]", "soap.S[0]", "requests[0].cue", "requests[1]"];
+  data.checks.push(...deletedPaths.map((path) => ({ path, level: "stop", code: "no_evidence", message: "確認" })));
+  const review = new ReviewSession(data);
+  // 計画はAIの受信値ではなく、看護師の選択を確認画面に反映する。
+  assert.equal(review.setCarePlan("soap.S[1]", knownPlan.id), true);
+  for (const path of deletedPaths) review.decide(path, "delete");
+  globalThis.fetch = async () => assert.fail("the preview must not save");
+
+  const preview = recordConfirmationPreview(review);
+
+  assert.deepEqual(preview.vitals, data.draft.vitals.slice(1));
+  assert.deepEqual(preview.soap.S, [retainedSentence]);
+  assert.deepEqual(preview.care_plans, [knownPlan]);
+  assert.deepEqual(preview.requests, [{ ...data.draft.requests[0], urgency: "none", cue: null }]);
+  assert.deepEqual(review.draft, data.draft);
+  assert.equal(review.confirmId, null);
+  assert.equal(review.pendingConfirmation, null);
+  assert.equal(review.timing.confirmed, null);
 });
 
 test("confirmation uses the specified JSON contract, a safe ID and real JST timestamps", async () => {

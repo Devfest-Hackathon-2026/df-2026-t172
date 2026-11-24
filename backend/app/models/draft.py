@@ -14,6 +14,7 @@ from app.models.limits import (
     MAX_ITEMS,
     MAX_SENTENCES,
     Evidence,
+    SafeId,
     ShortText,
     Text,
     UtteranceId,
@@ -57,6 +58,10 @@ class SoapSentence(BaseModel):
     text: Text
     evidence: Evidence = Field(default_factory=list)
     added_by: AddedBy = "ai"
+    plan_id: SafeId | None = Field(
+        default=None,
+        description="看護計画の id。看護師が選ぶ（AI は付けない、A-14）。null は計画外",
+    )
 
 
 class Soap(BaseModel):

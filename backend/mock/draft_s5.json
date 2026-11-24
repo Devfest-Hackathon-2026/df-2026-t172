@@ -10,7 +10,13 @@
     "full_kana": "こばやし まさお",
     "ward": "東3病棟",
     "assigned_to": "n03",
-    "assigned_reported_by": null
+    "assigned_reported_by": null,
+    "care_plans": [
+      {
+        "id": "cp08",
+        "label": "#転倒転落リスク状態"
+      }
+    ]
   },
   "patient_match": {
     "room": "一致",
@@ -143,7 +149,8 @@
             "u4",
             "u6"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         }
       ],
       "O": [],

@@ -8,7 +8,7 @@ import json
 import pytest
 
 from app.models.api import DraftResponse
-from app.services.mock_data import load_scenarios, mock_draft_path
+from app.services.mock_data import load_patients, load_scenarios, mock_draft_path
 from scripts.build_mocks import build_mock
 
 SCENARIO_IDS = [sc["id"] for sc in load_scenarios()]
@@ -27,6 +27,11 @@ def test_mock_file_matches_contract(scenario_id: str) -> None:
     assert response.mode == "mock"
     assert response.draft.soap.A == "" and response.draft.soap.P == ""
     assert all(u.start is not None for u in response.utterances)
+    # 看護計画（care-plan-soap）：AI は計画を付けない（A-14）。患者の計画は名簿seed と同じ
+    sentences = data["draft"]["soap"]["S"] + data["draft"]["soap"]["O"]
+    assert all("plan_id" in s and s["plan_id"] is None for s in sentences)
+    seed = next(p for p in load_patients() if p.id == response.patient.id)
+    assert data["patient"]["care_plans"] == [c.model_dump() for c in seed.care_plans]
 
 
 def test_scene3_shows_ai_added_sentence() -> None:

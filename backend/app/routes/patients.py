@@ -9,7 +9,13 @@ from app.container import Services
 from app.errors import ApiError
 from app.models.api import PatientAssigneePatch, PatientAssigneeResponse, PatientsResponse
 from app.models.limits import ID_PATTERN
-from app.routes.deps import ensure_known_nurse, ensure_reported_by, services, settings
+from app.routes.deps import (
+    ensure_known_nurse,
+    ensure_reported_by,
+    services,
+    settings,
+    with_roster_care_plans,
+)
 from app.services.clock import now_jst
 from app.services.safe_log import log_event
 
@@ -21,7 +27,8 @@ def list_patients(
     svc: Services = Depends(services), cfg: Settings = Depends(settings)
 ) -> PatientsResponse:
     """今日の名簿（デモは架空）。受け持ちは画面で変わるので、保存先の今の値を返す。"""
-    return PatientsResponse(mode=cfg.mode, patients=svc.store.list_patients())
+    patients = [with_roster_care_plans(svc, p) for p in svc.store.list_patients()]
+    return PatientsResponse(mode=cfg.mode, patients=patients)
 
 
 @router.patch("/api/patients/{patient_id}")
@@ -49,4 +56,6 @@ def change_assignee(
         reported_by=body.reported_by,
         tasks_moved=len(moved),
     )
-    return PatientAssigneeResponse(mode=cfg.mode, patient=patient, tasks_moved=moved)
+    return PatientAssigneeResponse(
+        mode=cfg.mode, patient=with_roster_care_plans(svc, patient), tasks_moved=moved
+    )

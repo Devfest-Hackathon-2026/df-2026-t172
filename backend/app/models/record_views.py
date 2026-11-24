@@ -7,7 +7,9 @@
 from pydantic import BaseModel, Field
 
 from app.models.api import MatchLevel, Mode
-from app.models.draft import Draft, Speaker
+from app.models.care_plan import CarePlans
+from app.models.draft import Draft, PatientRequest, Speaker
+from app.models.limits import MAX_ITEMS
 
 # 一覧の要約に出す、S・O の最初の文の長さ
 PREVIEW_CHARS = 60
@@ -58,6 +60,12 @@ class PatientCheck(BaseModel):
     note: str | None = None
 
 
+class RecordedRequest(PatientRequest):
+    """確定した依頼と、対応するタスクの id。"""
+
+    task_id: str | None = Field(default=None, description="対応するタスクの id。旧記録では null")
+
+
 class RecordDetail(Draft):
     """保存した記録の全体（下書きの欄に、保存のときの情報を足したもの）。"""
 
@@ -66,12 +74,16 @@ class RecordDetail(Draft):
     room: str
     name: str
     full_name: str = ""
+    requests: list[RecordedRequest] = Field(default_factory=list, max_length=MAX_ITEMS)
     evidence_utterances: list[EvidenceUtterance]
     kept_after_check: list[KeptAfterCheck]
     patient_check: PatientCheck
     confirmed_reported_by: str | None = Field(
         default=None, description="確定したと申告した看護師の id（自己申告、S-08）"
     )
+    revision: int = 0
+    care_plans: CarePlans = Field(default_factory=list)
+    amended_paths: list[str] = Field(default_factory=list)
     created_at: str
     chart_text: str = Field(description="保存した記録から作り直したカルテ用の文")
 

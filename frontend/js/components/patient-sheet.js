@@ -1,5 +1,5 @@
-import { displayName, loadPatients } from "../patients.js";
-import { createIcon } from "./icons.js";
+import { displayName, loadPatients } from "../patients.js?v=20261121-context-help";
+import { createIcon } from "./icons.js?v=20261121-context-help";
 
 export function createPatientSheet({ host, onSelect, onConsent, onClose, inputMethod = "audio" }) {
   const dialog = document.createElement("dialog");

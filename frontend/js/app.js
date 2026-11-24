@@ -1,42 +1,56 @@
-import { AUTH_REQUIRED_EVENT, MODE_EVENT, getHealth, getPatients } from "./api.js";
+import { renderUsageGuide } from "./components/usage-guide.js?v=20261121-context-help";
+import { AUTH_REQUIRED_EVENT, MODE_EVENT, getHealth, getPatients } from "./api.js?v=20261121-context-help";
 import { getPasscode, renderAuth, setPasscode } from "./auth.js";
 import {
   clearHistory, clearPatientData, clearReview, confirmConsent, getState, openTextInput, screens, selectPatient,
   setAuthentication, setConfirmedRecord, setConnection, setDraftPhase, setExportState, setFirstSpeaker, setHistoryState, setRecorder, setReview, setScreen, setTaskState, setTranscript,
 } from "./state.js";
-import { renderNavigation, updateNavigation, updateTaskCount } from "./components/navigation.js?v=20261109-count";
-import { renderHome, renderHomeTasks } from "./screens/home.js?v=20261110-ainote";
+import { renderNavigation, updateNavigation, updateTaskCount } from "./components/navigation.js?v=20261121-context-help";
+import { renderHome, renderHomeTasks } from "./screens/home.js?v=20261121-context-help";
 import { createPatientSheet } from "./components/patient-sheet.js";
-import { changeTaskDetails, completeTask, loadTaskCategories, loadTasks, reopenTask, taskCategory } from "./tasks.js?v=20261110-assign";
-import { createTaskChoiceDialog } from "./components/task-choice-dialog.js?v=20261110-assign";
+import { changeTaskDetails, completeTask, loadTaskCategories, loadTasks, reopenTask, taskCategory } from "./tasks.js?v=20261121-context-help";
+import { createTaskChoiceDialog } from "./components/task-choice-dialog.js?v=20261121-context-help";
+import { createRecordConfirmationDialog, createSummaryConfirmationDialog } from "./components/record-confirmation-dialog.js?v=20261121-context-help";
 import {
   changePatientAssignee, ensureNurses, loadAssignees, nurseName, setMyNurseId, setTaskScope, toggleAssigneeTable,
-} from "./assignment.js";
-import { taskAssigneeNote, taskAssigneeOptions } from "./components/task-assign.js?v=20261110-assign";
-import { createAudioReview, createTextReview } from "./records.js";
-import { refreshTextInput, renderTextInput } from "./screens/text-input.js";
+} from "./assignment.js?v=20261121-context-help";
+import { taskAssigneeNote, taskAssigneeOptions } from "./components/task-assign.js?v=20261121-context-help";
+import { createAudioReview, createTextReview } from "./records.js?v=20261121-context-help";
+import { refreshTextInput, renderTextInput } from "./screens/text-input.js?v=20261121-context-help";
 import { AudioRecorder } from "./recorder.js";
-import { refreshRecordingStatus, renderRecording } from "./screens/recording.js";
-import { renderProcessing } from "./screens/processing.js";
-import { refreshReviewStatus, renderReview } from "./screens/review.js?v=20261110-ainote";
-import { refreshExportDetails, renderExport } from "./screens/export.js";
-import { loadRecord, loadRecords } from "./history.js?v=20261110-fix";
-import { loadPatients } from "./patients.js";
-import { renderHistory } from "./screens/history.js?v=20261109-color";
-import { renderRecordDetail } from "./screens/record-detail.js";
-import { renderTasks, renderTasksContent } from "./screens/tasks.js?v=20261110-ainote";
+import { refreshRecordingStatus, renderRecording } from "./screens/recording.js?v=20261121-context-help";
+import { renderProcessing } from "./screens/processing.js?v=20261121-context-help";
+import { refreshReviewStatus, renderReview } from "./screens/review.js?v=20261121-context-help";
+import { refreshExportDetails, renderExport } from "./screens/export.js?v=20261121-context-help";
+import { loadRecord, loadRecords, updateRecord } from "./history.js?v=20261121-context-help";
+import { loadPatients } from "./patients.js?v=20261121-context-help";
+import { renderHistory } from "./screens/history.js?v=20261121-context-help";
+import { renderRecordDetail } from "./screens/record-detail.js?v=20261121-context-help";
+import { createRecordEditor } from "./screens/record-edit.js?v=20261121-context-help";
+import { renderTasks, renderTasksContent } from "./screens/tasks.js?v=20261121-context-help";
 
 const content = document.getElementById("screen");
+const guideTrigger = document.getElementById("guide-trigger");
+const usageGuide = renderUsageGuide();
+document.getElementById("overlay-root").append(usageGuide);
+guideTrigger.addEventListener("click", () => {
+  if (!usageGuide.open) usageGuide.showModal();
+});
+usageGuide.addEventListener("close", () => {
+  if (!guideTrigger.hidden && !usageGuide.open) guideTrigger.focus({ preventScroll: true });
+});
 const navigation = document.getElementById("bottom-nav");
 const modeBadge = document.getElementById("mode-badge");
 const toast = document.getElementById("toast");
 let toastTimeout;
 let patientSheet;
 let taskChoiceDialog;
+let recordConfirmationDialog;
 let taskController;
 let sessionVersion = 0;
 let draftController;
 let historyController;
+let historyEdit;
 let exportController;
 const taskUpdates = new Map();
 let taskRefreshQueued = false;
@@ -72,13 +86,16 @@ function showToast(message) {
 
 function renderScreen({ focus = false } = {}) {
   taskChoiceDialog?.close();
+  recordConfirmationDialog?.close();
   const { screen, authentication, phase, review, recorder, selectedPatient, draftError, draftErrorCode, confirmedRecord } = getState();
   if (authentication !== "ready") return;
   for (const audio of content.querySelectorAll("audio")) audio.pause();
+  guideTrigger.hidden = screen !== "home" || phase !== "idle";
+  if (guideTrigger.hidden && usageGuide.open) usageGuide.close();
   navigation.hidden = false;
   let view;
   if (screen === "history") view = getState().history.recordId
-    ? renderRecordDetail(getState().history) : renderHistory(getState().history);
+    ? (historyEdit?.editor.view ?? renderRecordDetail(getState().history)) : renderHistory(getState().history);
   else if (screen === "tasks") view = renderTasks(getState());
   else if (phase === "review" && review) view = renderReview(review);
   else if (phase === "export" && confirmedRecord) view = renderExport(confirmedRecord);
@@ -90,7 +107,7 @@ function renderScreen({ focus = false } = {}) {
   else view = renderHome(getState());
   content.replaceChildren(view);
   fitReviewTextareas();
-  const title = screen === "history" && getState().history.recordId ? "記録の詳細"
+  const title = screen === "history" && getState().history.recordId ? (historyEdit ? "記録を編集" : "記録の詳細")
     : screen === "home" && phase === "export" ? "記録を確定しました"
     : screen === "home" && phase === "review" ? "記録確認"
     : screen === "home" && phase === "text-input" ? "テキスト入力"
@@ -107,11 +124,16 @@ function renderScreen({ focus = false } = {}) {
 function syncNavigationLock() {
   const { phase, review } = getState();
   for (const button of navigation.querySelectorAll("button")) {
-    button.disabled = ["mic-request", "recording", "processing"].includes(phase) || review?.saveStatus === "saving";
+    button.disabled = ["mic-request", "recording", "processing"].includes(phase)
+      || review?.saveStatus === "saving" || Boolean(historyEdit?.controller);
   }
 }
 
 function navigate() {
+  if (historyEdit?.controller) {
+    window.history.replaceState(null, "", `#history/${historyEdit.record.record_id}`);
+    return;
+  }
   if (["mic-request", "recording", "processing"].includes(getState().phase) || getState().review?.saveStatus === "saving") {
     window.history.replaceState(null, "", "#home");
     return;
@@ -122,6 +144,7 @@ function navigate() {
   toast.hidden = true;
   historyController?.abort();
   historyController = null;
+  closeHistoryEditor();
   if (getState().screen === "history") {
     openHistoryRoute();
     return;
@@ -185,6 +208,74 @@ async function refreshRecordDetail(recordId) {
   } finally {
     if (historyController === controller) historyController = null;
     if (!controller.signal.aborted && version === sessionVersion && getState().screen === "history") renderScreen();
+  }
+}
+
+function closeHistoryEditor() {
+  if (!historyEdit) return;
+  historyEdit.controller?.abort();
+  historyEdit = null;
+  recordConfirmationDialog?.close();
+}
+
+function openHistoryEditor() {
+  const { history } = getState();
+  if (historyEdit || history.detailStatus !== "ready" || !history.record) return;
+  const record = history.record;
+  const editor = createRecordEditor(record, {
+    onReview(changes, preview, trigger) {
+      if (recordConfirmationDialog) return;
+      const popup = createSummaryConfirmationDialog({
+        host: document.getElementById("overlay-root"), record: preview,
+        question: "以下の内容で変更を保存しますか？", confirmLabel: "変更を保存", regionLabel: "保存する内容",
+        onConfirm() { saveHistoryEdit(edit, changes); },
+        onClose({ restoreFocus }) {
+          if (recordConfirmationDialog !== popup) return;
+          recordConfirmationDialog = null;
+          if (restoreFocus && trigger.isConnected) trigger.focus({ preventScroll: true });
+        },
+      });
+      recordConfirmationDialog = popup;
+      popup.open();
+    },
+    onCancel() {
+      closeHistoryEditor();
+      renderScreen();
+      content.querySelector('[data-history-action="edit"]')?.focus();
+    },
+    onReload() {
+      if (editor.hasChanges() && !window.confirm("編集内容を取り消して、最新の記録を開き直しますか？")) return;
+      closeHistoryEditor();
+      refreshRecordDetail(record.record_id);
+    },
+  });
+  const edit = { editor, record, controller: null };
+  historyEdit = edit;
+  renderScreen({ focus: true });
+}
+
+async function saveHistoryEdit(edit, changes) {
+  if (historyEdit !== edit || edit.controller) return;
+  const controller = new AbortController();
+  edit.controller = controller;
+  edit.editor.showError("");
+  edit.editor.setSaving(true);
+  syncNavigationLock();
+  try {
+    const record = await updateRecord(edit.record, changes, { signal: controller.signal });
+    if (historyEdit !== edit) return;
+    edit.controller = null;
+    closeHistoryEditor();
+    setHistoryState({ record });
+    renderScreen({ focus: true });
+    showToast("記録を更新しました");
+    if (Object.hasOwn(changes, "requests")) refreshTasks();
+  } catch (error) {
+    if (historyEdit !== edit || controller.signal.aborted || error.status === 401) return;
+    edit.controller = null;
+    edit.editor.setSaving(false);
+    syncNavigationLock();
+    edit.editor.showError(error.message, { canReload: error.status === 409 || error.status === 404 });
   }
 }
 
@@ -297,6 +388,36 @@ async function runVerification() {
     // エラーはセッション内に保持し、401は共通認証処理に任せます。
   }
   if (getState().review === session && !session.disposed) rerenderReview(session);
+}
+
+function openRecordConfirmation(trigger) {
+  const state = getState();
+  const session = state.review;
+  if (state.authentication !== "ready" || state.phase !== "review" || !session || recordConfirmationDialog) return;
+  if (session.canRetrySave()) {
+    // 前回の確認で承認済みの内容とIDを、そのまま再送する。
+    confirmDraft();
+    return;
+  }
+  if (!session.gate().ready) return;
+
+  const revision = session.revision;
+  const popup = createRecordConfirmationDialog({
+    host: document.getElementById("overlay-root"),
+    session,
+    onConfirm() {
+      const current = getState();
+      if (current.authentication === "ready" && current.screen === "home" && current.phase === "review"
+        && current.review === session && session.revision === revision) confirmDraft();
+    },
+    onClose({ restoreFocus }) {
+      if (recordConfirmationDialog !== popup) return;
+      recordConfirmationDialog = null;
+      if (restoreFocus && trigger.isConnected) trigger.focus({ preventScroll: true });
+    },
+  });
+  recordConfirmationDialog = popup;
+  popup.open();
 }
 
 async function confirmDraft() {
@@ -621,6 +742,7 @@ function finishAuthentication({ focus = false } = {}) {
   draftController = null;
   historyController?.abort();
   historyController = null;
+  closeHistoryEditor();
   clearPatientData();
   setAuthentication("ready");
   renderScreen({ focus });
@@ -629,6 +751,8 @@ function finishAuthentication({ focus = false } = {}) {
 }
 
 function renderAuthentication({ message = "", pending = false, retry = false } = {}) {
+  guideTrigger.hidden = true;
+  if (usageGuide.open) usageGuide.close();
   taskChoiceDialog?.close();
   updateTaskCount(navigation, getState());
   for (const audio of content.querySelectorAll("audio")) audio.pause();
@@ -723,6 +847,7 @@ content.addEventListener("click", (event) => {
   if (historyAction && !historyAction.disabled) {
     if (historyAction.dataset.historyAction === "refresh") refreshRecordList();
     if (historyAction.dataset.historyAction === "retry-detail") refreshRecordDetail(recordIdFromHash() ?? "");
+    if (historyAction.dataset.historyAction === "edit") openHistoryEditor();
     if (historyAction.dataset.historyAction === "copy") copyRecord(historyAction);
     return;
   }
@@ -744,7 +869,7 @@ content.addEventListener("click", (event) => {
     if (action === "restart-recording" && getState().selectedPatient) beginRecording(getState().selectedPatient);
     if (action === "stop-recording") getState().recorder?.stop();
     if (action === "verify") runVerification();
-    if (action === "confirm") confirmDraft();
+    if (action === "confirm") openRecordConfirmation(reviewAction);
     if (action === "swap-speakers" && session?.swapSpeakers()) rerenderReview(session);
     if (action === "show-check" && session) {
       const target = [...content.querySelectorAll("[data-alert-path]")]
@@ -813,6 +938,21 @@ content.addEventListener("input", (event) => {
   refreshReviewStatus(content.querySelector(".review-screen"), session);
 });
 
+content.addEventListener("review-edit-state-changed", () => {
+  const session = getState().review;
+  const root = content.querySelector(".review-screen");
+  if (root && session && !session.disposed) refreshReviewStatus(root, session);
+});
+
+content.addEventListener("review-structure-changed", (event) => {
+  const session = getState().review;
+  if (!session || session.disposed) return;
+  rerenderReview(session);
+  const next = [...content.querySelectorAll("[data-focus-key]")].find((field) => field.dataset.focusKey === event.detail.focusKey);
+  next?.focus({ preventScroll: true });
+  next?.scrollIntoView({ block: "nearest" });
+});
+
 content.addEventListener("change", (event) => {
   const input = event.target;
   if (input.id === "task-patient") {
@@ -836,6 +976,19 @@ content.addEventListener("change", (event) => {
   }
   const session = getState().review;
   if (!session || session.disposed) return;
+  if (input.dataset.reviewField === "care-plan") {
+    if (session.setCarePlan(input.dataset.path, input.value || null)) {
+      const name = input.selectedOptions[0]?.textContent ?? "計画外";
+      const focusKey = input.dataset.focusKey;
+      rerenderReview(session);
+      const target = [...content.querySelectorAll("[data-focus-key]")].find((field) => field.dataset.focusKey === focusKey);
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "nearest" });
+      const status = content.querySelector("[data-plan-change-status]");
+      if (status) status.textContent = `看護計画を${name}へ変更しました。`;
+    }
+    return;
+  }
   if (input.dataset.reviewField === "patient-confirmed") {
     session.confirmPatient(input.checked);
     input.checked = session.patientConfirmed;
@@ -867,7 +1020,9 @@ window.addEventListener(AUTH_REQUIRED_EVENT, (event) => {
   draftController = null;
   historyController?.abort();
   historyController = null;
+  closeHistoryEditor();
   patientSheet?.close();
+  recordConfirmationDialog?.close();
   clearPatientData();
   setAuthentication("required");
   renderAuthentication({ message: event.detail.message });
@@ -883,13 +1038,14 @@ document.addEventListener("visibilitychange", () => {
   }
   if (!document.hidden && getState().screen === "home" && getState().phase === "idle" && !patientSheet) refreshTasks();
   if (!document.hidden && getState().screen === "tasks") refreshTasks();
-  if (!document.hidden && getState().screen === "history" && !historyController) openHistoryRoute();
+  if (!document.hidden && getState().screen === "history" && !historyController && !historyEdit) openHistoryRoute();
 });
 
 window.addEventListener("pagehide", () => {
   cancelExportRequest();
   draftController?.abort();
   draftController = null;
+  closeHistoryEditor();
   for (const audio of content.querySelectorAll("audio")) audio.pause();
   clearReview();
   selectPatient(null);

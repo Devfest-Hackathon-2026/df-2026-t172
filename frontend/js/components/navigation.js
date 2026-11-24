@@ -1,5 +1,5 @@
 import { getState, screens } from "../state.js";
-import { createIcon } from "./icons.js";
+import { createIcon } from "./icons.js?v=20261121-context-help";
 
 export function renderNavigation(container, activeScreen) {
   const buttons = Object.entries(screens).map(([id, label]) => {

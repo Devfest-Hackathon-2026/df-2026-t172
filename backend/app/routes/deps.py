@@ -55,6 +55,16 @@ def with_current_assignee(svc: Services, patient: Patient) -> Patient:
     return patient.model_copy(update={"assigned_to": saved.assigned_to})
 
 
+def with_roster_care_plans(svc: Services, patient: Patient) -> Patient:
+    """看護計画を、起動時の名簿の値にする（確定で照らし合わせる値とそろえるため）。
+
+    看護計画は保存先（Firestore）に書かず、名簿seed からだけ入る（care-plan-soap の要件2の9）。
+    起動時の名簿にいない患者（保存先にだけ残っている患者）は空にする。
+    """
+    found = next((p for p in svc.roster if p.id == patient.id), None)
+    return patient.model_copy(update={"care_plans": list(found.care_plans) if found else []})
+
+
 def find_patient(svc: Services, patient_id: str) -> Patient:
     """名簿（起動時に読んでメモリに置いたもの）から1人を引く。
 

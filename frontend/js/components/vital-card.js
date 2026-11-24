@@ -1,7 +1,7 @@
-import { vitalItems } from "../records.js";
+import { vitalItems } from "../records.js?v=20261121-context-help";
 import { element, panel } from "./review-dom.js";
 import { renderEvidence } from "./evidence-card.js";
-import { markCheckTarget } from "./review-entry.js";
+import { markCheckTarget } from "./review-entry.js?v=20261121-context-help";
 
 export function renderVitalCard(session) {
   const section = panel("バイタル");

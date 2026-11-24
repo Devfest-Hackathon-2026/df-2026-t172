@@ -2,6 +2,7 @@
 
 import json
 import logging
+from collections.abc import Callable
 from datetime import timedelta
 from types import SimpleNamespace as NS
 from typing import Any
@@ -116,7 +117,7 @@ class FakeDoc:
     def exists(self) -> bool:
         return self._key in self._store
 
-    def get(self) -> "FakeDoc":
+    def get(self, *, transaction: Any = None) -> "FakeDoc":
         return self
 
     def to_dict(self) -> dict:
@@ -139,17 +140,18 @@ class FakeCollection:
     def where(self, field: str, op: str, value: Any) -> "FakeCollection":
         return FakeCollection(self._store, self._name, (field, value))
 
-    def stream(self) -> list[FakeDoc]:
+    def stream(self, *, transaction: Any = None) -> list[FakeDoc]:
         keys = [k for k in self._store if k[0] == self._name]
         docs = [FakeDoc(self._store, k) for k in keys]
         if self._where:
-            docs = [d for d in docs if d.to_dict()[self._where[0]] == self._where[1]]
+            docs = [d for d in docs if d.to_dict().get(self._where[0]) == self._where[1]]
         return docs
 
 
 class FakeFirestore:
     def __init__(self) -> None:
         self.data: dict[tuple[str, str], dict] = {}
+        self.fail_transaction = False
 
     def collection(self, name: str) -> FakeCollection:
         return FakeCollection(self.data, name)
@@ -159,6 +161,29 @@ class FakeFirestore:
         return NS(
             set=lambda doc, fields: pending.append((doc, fields)),
             commit=lambda: [self.data.__setitem__(d._key, dict(f)) for d, f in pending],
+        )
+
+    def transaction(self) -> Any:
+        pending: list[Callable[[], None]] = []
+
+        def commit() -> None:
+            if self.fail_transaction:
+                raise RuntimeError("テスト用の保存失敗")
+            for write in pending:
+                write()
+
+        return NS(
+            _id=b"fake",
+            _read_only=False,
+            _max_attempts=1,
+            _begin=lambda **kwargs: None,
+            _clean_up=pending.clear,
+            _commit=commit,
+            _rollback=pending.clear,
+            update=lambda doc, fields: pending.append(lambda: doc.update(fields)),
+            set=lambda doc, fields: pending.append(lambda: doc.set(fields)),
+            create=lambda doc, fields: pending.append(lambda: doc.set(fields)),
+            delete=lambda doc: pending.append(lambda: self.data.pop(doc._key, None)),
         )
 
 

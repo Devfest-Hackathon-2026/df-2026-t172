@@ -1,6 +1,8 @@
-import { ApiError, createDraft, postRecord, verifyDraft } from "./api.js";
+import { canSplitSentence, splitSentence, canUndoSentenceSplit, undoSentenceSplit } from "./sentence-splits.js?v=20261121-context-help";
+import { normalizeCarePlans } from "./care-plans.js?v=20261121-context-help";
+import { ApiError, createDraft, postRecord, verifyDraft } from "./api.js?v=20261121-context-help";
 import { audioFilename, MAX_AUDIO_BYTES, MAX_AUDIO_SECONDS } from "./recorder.js";
-import { reportedBy } from "./assignment.js";
+import { reportedBy } from "./assignment.js?v=20261121-context-help";
 
 export function isoJst(date = new Date()) {
   return `${new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, -1)}+09:00`;
@@ -125,12 +127,17 @@ export class ReviewSession {
   constructor(data, { expectedPatientId = data?.patient?.id, audio = null, timing = {} } = {}) {
     validateResponse(data, expectedPatientId);
     this.patient = clone(data.patient);
+    this.carePlansSupported = Object.hasOwn(data.patient, "care_plans");
+    this.patient.care_plans = normalizeCarePlans(data.patient.care_plans);
     this.patientMatch = clone(data.patient_match);
     this.input = data.input;
     this.mode = data.mode;
     this.utterances = clone(data.utterances);
     this.draft = clone(data.draft);
+    for (const part of ["S", "O"]) for (const item of this.draft.soap[part]) item.plan_id = null;
     this.addedElements = new Set();
+    this.splits = new Map();
+    this.splitEdits = new Map();
     this.originalAiTexts = new Set(addableKinds.flatMap((kind) => elementList(this.draft, kind)
       .filter((item) => item.added_by !== "nurse").map((item) => normalizedText(item.text))));
     // A・Pは看護師だけが書きます。生成側に値があっても引き継ぎません。
@@ -212,7 +219,10 @@ export class ReviewSession {
   }
 
   fingerprint(path) {
-    return JSON.stringify([targetAt(this.draft, path), this.checks
+    const target = targetAt(this.draft, path);
+    const value = /^soap\.[SO]\[\d+\]$/.test(path) && target
+      ? Object.fromEntries(Object.entries(target).filter(([key]) => key !== "plan_id")) : target;
+    return JSON.stringify([value, this.checks
       .filter((check) => check.path === path)
       .map(({ level, code, message }) => [level, code, message]).sort()]);
   }
@@ -250,6 +260,31 @@ export class ReviewSession {
     this.counts.edited = this.editedPaths.size;
   }
 
+  canSplitSentence(path) { return canSplitSentence(this, path); }
+
+  splitSoapSentence(path, parts) { return splitSentence(this, path, parts); }
+
+  canUndoSplit(path) { return canUndoSentenceSplit(this, path); }
+
+  undoSplit(path) { return undoSentenceSplit(this, path); }
+
+  invalidateSentencePositions(kind, index) {
+    const shifted = (key) => key.startsWith(`${kind}[`) && Number(key.split("[")[1].split("]")[0]) >= index;
+    this.checks = this.checks.filter((check) => !shifted(check.path));
+    this.seals = this.seals.filter((seal) => !shifted(seal.path));
+    for (const key of this.decisions.keys()) if (shifted(key)) this.decisions.delete(key);
+    for (const key of this.multipleConfirmed.keys()) if (shifted(key)) this.multipleConfirmed.delete(key);
+  }
+
+  setCarePlan(path, planId) {
+    if (this.disposed || this.isLocked() || this.status === "verifying"
+      || !/^soap\.[SO]\[\d+\]$/.test(path) || this.action(path) === "delete") return false;
+    const item = this.target(path);
+    if (!item || (planId !== null && !this.patient.care_plans.some((plan) => plan.id === planId))) return false;
+    if (item.plan_id !== planId) { this.resetSaveError(); item.plan_id = planId; }
+    return true;
+  }
+
   setVital(index, item, value) {
     if (this.disposed || this.isLocked() || value.length > 100 || !vitalItems.some((vital) => vital.item === item)) return null;
     let position = index;
@@ -283,12 +318,16 @@ export class ReviewSession {
     if (this.disposed || this.isLocked()) return null;
     const list = elementList(this.draft, kind);
     if (!list || list.length >= (kind.startsWith("soap.") ? 50 : 30)) return null;
-    const item = { text: "", evidence: [], added_by: "nurse", ...(kind === "requests" ? { urgency: "none", cue: null } : {}) };
+    const item = { text: "", evidence: [], added_by: "nurse", ...(kind.startsWith("soap.") ? { plan_id: null } : {}), ...(kind === "requests" ? { urgency: "none", cue: null } : {}) };
     list.push(item);
     this.addedElements.add(item);
     const path = `${kind}[${list.length - 1}]`;
     this.touch(path);
     return path;
+  }
+
+  originForAddedText(value) {
+    return this.originalAiTexts.has(normalizedText(value)) ? "ai" : "nurse";
   }
 
   setElement(path, value) {
@@ -298,7 +337,7 @@ export class ReviewSession {
     const wasAI = item.added_by !== "nurse";
     item.text = value;
     // 元のAI文のコピーを手入力扱いにして照合を飛ばさないようにします。
-    if (this.addedElements.has(item)) item.added_by = this.originalAiTexts.has(normalizedText(value)) ? "ai" : "nurse";
+    if (this.addedElements.has(item)) item.added_by = this.originForAddedText(value);
     this.touch(path, { entail: wasAI || item.added_by !== "nurse" });
   }
 
@@ -329,12 +368,10 @@ export class ReviewSession {
     const list = elementList(this.draft, match[1]), index = Number(match[2]);
     if (!this.addedElements.has(list[index])) return false;
     const entail = list.slice(index).some((item) => item.added_by !== "nurse");
+    this.splitEdits.delete(list[index]);
     this.addedElements.delete(list[index]);
     list.splice(index, 1);
-    const shifted = (key) => key.startsWith(`${match[1]}[`) && Number(key.split("[")[1].split("]")[0]) >= index;
-    this.checks = this.checks.filter((check) => !shifted(check.path));
-    this.seals = this.seals.filter((seal) => !shifted(seal.path));
-    for (const key of this.decisions.keys()) if (shifted(key)) this.decisions.delete(key);
+    this.invalidateSentencePositions(match[1], index);
     this.touch(path, { entail });
     return true;
   }
@@ -398,6 +435,7 @@ export class ReviewSession {
   gate() {
     if (this.disposed) return { ready: false, reasons: ["下書きは破棄されています"] };
     const reasons = [];
+    if (this.splitEdits.size) reasons.push("分割を適用するかキャンセルしてください");
     if (this.hasBlankAdded()) reasons.push("追加した項目を入力または削除してください");
     if (this.saveStatus === "saving") reasons.push("保存中です");
     if (this.saveStatus === "uncertain") reasons.push("保存結果が未確認です。再送してください");
@@ -466,7 +504,7 @@ export class ReviewSession {
     if (!this.gate().ready) throw new Error("確認が終わっていません。");
     this.confirmId ??= createConfirmId();
     this.timing.confirmed ??= isoJst();
-    return clone({
+    const payload = clone({
       confirm_id: this.confirmId,
       patient_id: this.patient.id,
       patient_confirmed: this.patientConfirmed,
@@ -480,6 +518,11 @@ export class ReviewSession {
       timing: this.timing,
       ...reportedBy(), // 確定した看護師の自己申告（S-08）
     });
+    for (const part of ["S", "O"]) payload.draft.soap[part].forEach((item, index) => {
+      if (!this.carePlansSupported) delete item.plan_id;
+      else if (this.action(`soap.${part}[${index}]`) === "delete") item.plan_id = null;
+    });
+    return payload;
   }
 
   // 送信済みか不明な間は、内容もIDも変えず、同じスナップショットを再送します。
@@ -555,6 +598,8 @@ export class ReviewSession {
     this.utterances = [];
     this.draft = null;
     this.addedElements.clear();
+    this.splits.clear();
+    this.splitEdits.clear();
     this.originalAiTexts.clear();
     this.checks = [];
     this.seals = [];

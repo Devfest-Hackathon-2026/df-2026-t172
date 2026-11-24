@@ -208,7 +208,7 @@ export async function getRecords({ patientId = "", ...options } = {}) {
   return data;
 }
 
-export async function getRecord(recordId, options = {}) {
+async function requestRecord(recordId, options) {
   if (typeof recordId !== "string" || !/^r_[A-Za-z0-9_-]{1,90}$/.test(recordId)) {
     throw new ApiError("記録の指定が正しくありません。", { code: "invalid_record_id" });
   }
@@ -217,4 +217,12 @@ export async function getRecord(recordId, options = {}) {
     throw new ApiError("記録の詳細を読み取れませんでした。", { code: "invalid_response" });
   }
   return data;
+}
+
+export function getRecord(recordId, options = {}) {
+  return requestRecord(recordId, options);
+}
+
+export function patchRecord(recordId, body, options = {}) {
+  return requestRecord(recordId, { ...options, method: "PATCH", body });
 }

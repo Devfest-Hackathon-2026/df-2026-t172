@@ -10,7 +10,13 @@
     "full_kana": "すずはら きよ",
     "ward": "東3病棟",
     "assigned_to": "n02",
-    "assigned_reported_by": null
+    "assigned_reported_by": null,
+    "care_plans": [
+      {
+        "id": "cp06",
+        "label": "#体液量不足リスク状態"
+      }
+    ]
   },
   "patient_match": {
     "room": "一致",
@@ -96,14 +102,16 @@
           "evidence": [
             "u6"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         },
         {
           "text": "飲水は少しはできているとの発言。",
           "evidence": [
             "u8"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         },
         {
           "text": "脱水傾向あり。",
@@ -111,7 +119,8 @@
             "u6",
             "u8"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         }
       ],
       "O": [],

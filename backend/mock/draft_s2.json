@@ -10,7 +10,17 @@
     "full_kana": "さとう かずお",
     "ward": "東3病棟",
     "assigned_to": "n02",
-    "assigned_reported_by": null
+    "assigned_reported_by": null,
+    "care_plans": [
+      {
+        "id": "cp04",
+        "label": "#急性疼痛"
+      },
+      {
+        "id": "cp05",
+        "label": "#活動耐性低下"
+      }
+    ]
   },
   "patient_match": {
     "room": "一致",
@@ -132,7 +142,8 @@
             "u2",
             "u6"
           ],
-          "added_by": "ai"
+          "added_by": "ai",
+          "plan_id": null
         }
       ],
       "O": [],

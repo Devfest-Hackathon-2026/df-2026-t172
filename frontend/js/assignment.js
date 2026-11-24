@@ -1,5 +1,5 @@
-import { ApiError, request } from "./api.js";
-import { loadPatients } from "./patients.js";
+import { ApiError, request } from "./api.js?v=20261121-context-help";
+import { loadPatients } from "./patients.js?v=20261121-context-help";
 
 // タスクの担当の割り振り（決まり S-08）。ログインはないので、「自分」は看護師が一度選んで
 // 合言葉と同じく sessionStorage に置くだけです（タブを閉じると消えます）。

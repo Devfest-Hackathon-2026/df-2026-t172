@@ -75,6 +75,7 @@ def record_document(
     *,
     patient: Patient,
     draft: Draft,
+    task_ids: list[str],
     utterances: list[Utterance],
     decisions: list[Decision],
     kept: list[Document],
@@ -82,15 +83,17 @@ def record_document(
     now: datetime,
     reported_by: str | None = None,
 ) -> Document:
-    """Firestore の records の1件。reported_by は確定した看護師の自己申告（S-08）。"""
+    """確定した各依頼に対応するタスクの id を記録に残す。"""
     return {
         "patient_id": patient.id,
         "room": patient.room,
         "name": patient.name,
         "full_name": patient.display_name,
-        **draft.model_dump(
-            include={"vitals", "soap", "requests", "manual_needed", "doctor_questions"}
-        ),
+        **draft.model_dump(include={"vitals", "soap", "manual_needed", "doctor_questions"}),
+        "requests": [
+            {**request.model_dump(), "task_id": task_id}
+            for request, task_id in zip(draft.requests, task_ids, strict=True)
+        ],
         "evidence_utterances": evidence_utterances(draft, utterances),
         "decisions": [d.model_dump() for d in decisions],
         "kept_after_check": kept,

@@ -1,6 +1,8 @@
+import { renderCarePlanSelect } from "./care-plan-select.js?v=20261121-context-help";
+import { appendSentenceTools } from "./sentence-split.js?v=20261121-context-help";
 import { element, reviewButton } from "./review-dom.js";
 import { renderEvidence, utteranceLabel } from "./evidence-card.js";
-import { taskGroups } from "../tasks.js";
+import { taskGroups } from "../tasks.js?v=20261121-context-help";
 
 export function markCheckTarget(node, path) {
   node.dataset.checkPath = path ?? "";
@@ -90,6 +92,7 @@ export function renderReviewEntry(item, path, session, { part, index, evidenceKe
     remove.setAttribute("aria-label", `${label}の追加項目を削除`);
     heading.append(remove);
   }
+  if (part) heading.prepend(element("span", "sentence-label", label));
   const input = element("textarea", "textarea");
   input.value = item.text;
   input.maxLength = 5000;
@@ -104,6 +107,7 @@ export function renderReviewEntry(item, path, session, { part, index, evidenceKe
   input.setAttribute("aria-label", label);
   if (heading.childElementCount) row.append(heading);
   row.append(input);
+  if (part) row.append(renderCarePlanSelect(item, path, session, label));
   if (path.startsWith("requests[")) {
     if (session.addedElements.has(item)) {
       const selectLabel = element("label", "form-label", "区分");
@@ -136,5 +140,6 @@ export function renderReviewEntry(item, path, session, { part, index, evidenceKe
   if (path.startsWith("requests[") && session.action(`${path}.cue`) === "delete") {
     row.append(element("span", "delete-note", "手がかりは確定時に削除"));
   }
+  if (part) appendSentenceTools(row, item, path, session, label, input);
   return row;
 }
